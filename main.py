@@ -18,7 +18,6 @@ import os
 
 import webapp2
 
-import config
 import routes
 
 #from lib.basehandler import handle_error

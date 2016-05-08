@@ -7,8 +7,6 @@ RedirectRoute: http://webapp-improved.appspot.com/api/webapp2_extras/routes.html
 from webapp2_extras.routes import RedirectRoute
 from app.web.views import user_handlers as user_handlers
 from app.web.views import core_handlers as core_handlers
-from app.web.views import search_handlers as search_handlers
-from app.web.views import tcshowslist_handlers as tcshowslist_handlers
 from app.web.views import error_handlers as error_handlers
 
 secure_scheme = 'https'
