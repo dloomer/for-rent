@@ -1,0 +1,56 @@
+feeds:
+  - name: downtown-seattle
+    description: Downtown
+    url: http://seattle.craigslist.org/search/apa?format=rss&hasPic=1&max_price=2700&minSqft=800&min_price=1200&pets_dog=1&postal=98101&search_distance=1
+    hostname_proxy: seattle.craigslist.loomer.net
+    region: "Seattle, WA, US"
+  - name: beacon-hill
+    description: Beacon Hill
+    url: http://seattle.craigslist.org/search/apa?format=rss&hasPic=1&max_price=2700&minSqft=800&min_price=1200&pets_dog=1&postal=98108&search_distance=3
+    hostname_proxy: seattle.craigslist.loomer.net
+    region: "Seattle, WA, US"
+  - name: lower-queen-anne
+    description: Lower Queen Anne
+    url: http://seattle.craigslist.org/search/apa?format=rss&hasPic=1&max_price=2700&minSqft=800&min_price=1200&pets_dog=1&postal=98109&search_distance=1
+    hostname_proxy: seattle.craigslist.loomer.net
+    region: "Seattle, WA, US"
+  - name: queen-anne
+    description: Queen Anne
+    url: http://seattle.craigslist.org/search/apa?format=rss&hasPic=1&max_price=2700&minSqft=800&min_price=1200&pets_dog=1&postal=98121&search_distance=1
+    hostname_proxy: seattle.craigslist.loomer.net
+    region: "Seattle, WA, US"
+  - name: wallingford
+    description: Wallingford
+    url: http://seattle.craigslist.org/search/apa?format=rss&hasPic=1&max_price=2700&minSqft=800&min_price=1200&pets_dog=1&postal=98103&search_distance=2
+    hostname_proxy: seattle.craigslist.loomer.net
+    region: "Seattle, WA, US"
+  - name: capitol-hill
+    description: Capitol Hill
+    url: http://seattle.craigslist.org/search/apa?format=rss&hasPic=1&max_price=2700&minSqft=800&min_price=1200&pets_dog=1&postal=98102&search_distance=1
+    hostname_proxy: seattle.craigslist.loomer.net
+    region: "Seattle, WA, US"
+  - name: north-capitol-hill
+    description: Capitol Hill
+    url: http://seattle.craigslist.org/search/apa?format=rss&hasPic=1&max_price=2700&minSqft=800&min_price=1200&pets_dog=1&postal=98112&search_distance=1
+    hostname_proxy: seattle.craigslist.loomer.net
+    region: "Seattle, WA, US"
+  - name: west-seattle
+    description: West Seattle
+    url: http://seattle.craigslist.org/search/apa?format=rss&hasPic=1&max_price=2700&minSqft=800&min_price=1200&pets_dog=1&postal=98126&search_distance=1
+    hostname_proxy: seattle.craigslist.loomer.net
+    region: "Seattle, WA, US"
+  - name: ballard
+    description: Ballard
+    url: http://seattle.craigslist.org/search/apa?format=rss&hasPic=1&max_price=2700&minSqft=800&min_price=1200&pets_dog=1&postal=98117&search_distance=1
+    hostname_proxy: seattle.craigslist.loomer.net
+    region: "Seattle, WA, US"
+  - name: fremont
+    description: Fremont
+    url: http://seattle.craigslist.org/search/apa?format=rss&hasPic=1&max_price=2700&minSqft=800&min_price=1200&pets_dog=1&postal=98107&search_distance=1
+    hostname_proxy: seattle.craigslist.loomer.net
+    region: "Seattle, WA, US"
+  - name: columbia-city
+    description: Columbia City
+    url: http://seattle.craigslist.org/search/apa?format=rss&hasPic=1&max_price=2700&minSqft=800&min_price=1200&pets_dog=1&postal=98118&search_distance=1
+    hostname_proxy: seattle.craigslist.loomer.net
+    region: "Seattle, WA, US"

@@ -5,15 +5,12 @@ RedirectRoute: http://webapp-improved.appspot.com/api/webapp2_extras/routes.html
 """
 
 from webapp2_extras.routes import RedirectRoute
-from app.web.views import user_handlers as user_handlers
 from app.web.views import core_handlers as core_handlers
 from app.web.views import error_handlers as error_handlers
 
 secure_scheme = 'https'
 
 _routes = [
-    (r'/show/(.*)', core_handlers.ShowRequestHandler),
-    (r'/artist/(.*)', core_handlers.ArtistRequestHandler),
     RedirectRoute('/', core_handlers.HomeRequestHandler, name='home', strict_slash=True),
 ]
 
