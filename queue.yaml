@@ -1,11 +1,1 @@
 queue:
-- name: legacy-sync-task-enqueuer
-  rate: 6/m
-  bucket_size: 1
-  max_concurrent_requests: 1
-- name: legacy-sync
-  rate: 1/m
-  bucket_size: 1
-  max_concurrent_requests: 1
-  retry_parameters:
-    max_backoff_seconds: 300

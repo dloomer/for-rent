@@ -1,11 +1,6 @@
 cron:
-- description: Assertions for shows cache
-  url: /batch/shows_cache_assertions
-  schedule: every 1 hours from 8:00 to 20:00
-  timezone: America/Chicago
-  #target: backend
-- description: Overnight shows cache updates
-  url: /batch/yesterday_shows_cache
-  schedule: every day 04:00 # needs to be no sooner than 4:00 - and preferably not later.
+- description: Load all feeds
+  url: /batch/load_feed_data
+  schedule: every 30 minutes from 9:00 to 22:00
   timezone: America/Chicago
   target: backend

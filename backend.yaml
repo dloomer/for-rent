@@ -1,4 +1,4 @@
-application: mnlive-hrd
+application: for-rent-1305
 version: 1
 module: backend
 runtime: python27

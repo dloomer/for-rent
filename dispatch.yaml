@@ -1,0 +1,5 @@
+dispatch:
+  - url: "*/batch/*"
+    module: backend
+  - url: "*/task/*"
+    module: backend
