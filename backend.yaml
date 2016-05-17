@@ -16,3 +16,7 @@ builtins:
 handlers:
 - url: .*
   script: backend.main.app
+
+libraries:
+- name: PIL
+  version: "1.1.7"
