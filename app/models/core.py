@@ -1,4 +1,6 @@
-from google.appengine.ext import db
+import pickle
+
+from google.appengine.ext import blobstore, db
 
 from app.lib.utils import string_utils
 
