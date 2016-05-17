@@ -54,3 +54,4 @@ feeds:
     url: http://seattle.craigslist.org/search/apa?format=rss&hasPic=1&max_price=2700&minSqft=800&min_price=1200&pets_dog=1&postal=98118&search_distance=1
     hostname_proxy: seattle.craigslist.loomer.net
     region: "Seattle, WA, US"
+images_hostname_proxy: images.craigslist.loomer.net

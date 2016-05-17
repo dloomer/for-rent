@@ -2,15 +2,20 @@
 
 # standard library imports
 from StringIO import StringIO
+from urlparse import urlparse
 
 import PIL
 
 from google.appengine.ext import blobstore, db
 from google.appengine.api import app_identity, images, urlfetch
-import cloudstorage as gcs
+try:
+    import cloudstorage as gcs
+except ImportError:
+    import third_party.cloudstorage as gcs
 
 # local application/library specific imports
 import app.models.core as core_models
+from app.lib.data_connectors import feed_config_connector
 
 COMPRESSION_SETTINGS = {
     'original': {
@@ -110,9 +115,20 @@ def _save_gcs_object(data, file_name, content_type='application/octet-stream', o
     return blob_key
 
 class Image(object):
+    def _url_for_urlfetch(self, url):
+        if self.feed_config.images_hostname_proxy:
+            parsed = urlparse(url)
+            proxied_url = \
+                parsed.scheme + '://' + self.feed_config.images_hostname_proxy + parsed.path + \
+                ('?' + parsed.query if parsed.query else '')
+            return proxied_url
+        else:
+            return url
+
     def __init__(self, source_url):
+        self.feed_config = feed_config_connector.get_feed_config()
         self.source_url = source_url
-        self.img_data = urlfetch.fetch(self.source_url).content
+        self.img_data = urlfetch.fetch(self._url_for_urlfetch(self.source_url)).content
         self.db_image = None
 
         handmade_key = db.Key.from_path("Image", 1)
