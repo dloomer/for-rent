@@ -7,7 +7,7 @@ def send_property_notification(property_listing, item_url):
     message = mail.EmailMessage(
         sender=sender_address,
         subject=subject,
-        to="Dave Loomer <dloomer@gmail.com>"
+        to=["Dave Loomer <dloomer@gmail.com>", "Bitchypants <lesley.babb@gmail.com>"]
     )
 
     message.body = item_url
