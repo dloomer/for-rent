@@ -4,7 +4,8 @@
 from StringIO import StringIO
 from urlparse import urlparse
 
-import PIL
+from PIL import Image as PIL_Image
+from PIL import ImageFile
 
 from google.appengine.ext import blobstore, db
 from google.appengine.api import app_identity, images, urlfetch
@@ -21,7 +22,9 @@ COMPRESSION_SETTINGS = {
     'original': {
         'file_shortname': "o",
         'quality': 80,
-        'library_used': "appengine_images"
+        'library_used': "PIL",
+        'progressive': True,
+        'optmize': True
     },
     'small': {
         'file_shortname': "t",
@@ -116,10 +119,10 @@ def _save_gcs_object(data, file_name, content_type='application/octet-stream', o
 
 class Image(object):
     def _url_for_urlfetch(self, url):
-        if self.feed_config.images_hostname_proxy:
+        if self.feed_config.get('images_hostname_proxy'):
             parsed = urlparse(url)
             proxied_url = \
-                parsed.scheme + '://' + self.feed_config.images_hostname_proxy + parsed.path + \
+                parsed.scheme + '://' + self.feed_config['images_hostname_proxy'] + parsed.path + \
                 ('?' + parsed.query if parsed.query else '')
             return proxied_url
         else:
@@ -136,43 +139,31 @@ class Image(object):
             db.Key.from_path('Image', list(db.allocate_ids(handmade_key, 1))[0])
 
     def _save_gcs_image(self, img, mime_type, image_size):
-        if mime_type.lower() == "image/jpeg":
-            format_ = images.JPEG
-        elif mime_type.lower() == "image/png":
-            format_ = images.PNG
-        elif mime_type.lower() == "image/gif":
-            format_ = images.GIF
+        if mime_type.lower().startswith("image/"):
+            format_ = mime_type[6:].upper()
         else:
             raise Exception("Unexpected MIME type %s" % mime_type)
 
         settings = COMPRESSION_SETTINGS[image_size]
 
-        if image_size == 'original':
-            # compress the file a bit.
-            img.crop(0.0, 0.0, 1.0, 1.0)
-            img_data = img.execute_transforms(
-                output_encoding=format_,
-                quality=settings['quality']
-            )
-            _, saved_width, saved_height = _get_image_info(img_data)
-        else:
-            PIL.ImageFile.MAXBLOCK = 2**20
-            img_io = StringIO()
+        ImageFile.MAXBLOCK = 2**20
+        img_io = StringIO()
 
+        if settings.get('thumbnail_dimensions'):
             img = img.copy()
-            img.thumbnail(settings['thumbnail_dimensions'], PIL.Image.ANTIALIAS)
+            img.thumbnail(settings['thumbnail_dimensions'], PIL_Image.ANTIALIAS)
             img = img.convert('RGB')
 
-            img.save(
-                img_io,
-                format_,
-                quality=settings['quality'],
-                optimize=settings['quality'],
-                progressive=settings['progressive']
-            )
-            img_data = img_io.getvalue()
-            _, saved_width, saved_height = _get_image_info(img_data)
-            img_io.close()
+        img.save(
+            img_io,
+            format_,
+            quality=settings['quality'],
+            optimize=settings['quality'],
+            progressive=settings['progressive']
+        )
+        img_data = img_io.getvalue()
+        _, saved_width, saved_height = _get_image_info(img_data)
+        img_io.close()
 
         file_name = "/images/%s/%s.jpg" % (
             self._allocated_image_key.id(),
@@ -196,7 +187,7 @@ class Image(object):
             )
 
         file_ = StringIO(orig_image_data)
-        source_img = PIL.Image.open(file_)
+        source_img = PIL_Image.open(file_)
 
         small_blob_key, _, small_dimensions = \
             self._save_gcs_image(
@@ -223,5 +214,5 @@ class Image(object):
         )
         db_image.compression_metadata = COMPRESSION_SETTINGS
         db_image.put()
-        
+
         self.db_image = db_image
