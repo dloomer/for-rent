@@ -44,4 +44,3 @@ class HomeRequestHandler(BaseHandler):
         logging.debug("headers=%s" % self.request.headers)
 
         #return self.render_template('home.html', **params)
-

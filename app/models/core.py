@@ -69,6 +69,54 @@ class BaseModel(db.Model):
             return entity, True
         return _tx()
 
+class Image(db.Model):
+    original_url = db.StringProperty(indexed=False)
+    small_jpeg_blob_key = db.StringProperty(indexed=False)
+    original_jpeg_blob_key = db.StringProperty(indexed=False)
+    retina_small_jpeg_blob_key = db.StringProperty(indexed=False)
+
+    small_jpeg_dimensions = db.ListProperty(item_type=int,indexed=False)
+    original_jpeg_dimensions = db.ListProperty(item_type=int,indexed=False)
+    retina_small_jpeg_dimensions = db.ListProperty(item_type=int,indexed=False)
+
+    compression_metadata = DictProperty(indexed=False)
+
+    create_date = db.DateTimeProperty(auto_now_add=True, indexed=False)
+
+    def serving_url(self, size="o"):
+        gcs_bucket_folder_url = "http://storage.googleapis.com/for-rent-1305.appspot.com/images"
+        return "%s/%s/%s.jpg" % (gcs_bucket_folder_url, self.key().id(), size)
+
+    def to_dict(self, thumbnails_only=False):
+        d = {
+            'id': self.key().id(),
+            'src': self.image_source_name,
+            'url': self.original_url,
+            't_url': self.serving_url('t'),
+            't_dim': self.small_jpeg_dimensions,
+            'rt_url': self.serving_url('rt'),
+            'rt_dim': self.retina_small_jpeg_dimensions,
+        }
+        if not thumbnails_only:
+            d.update({
+                'o_url': self.serving_url('o'),
+                'o_dim': self.original_jpeg_dimensions,
+            })
+        return d
+    def delete_related_blobs(self):
+        blob_keys_to_delete = []
+        if self.original_jpeg_blob_key:
+            blob_keys_to_delete.append(self.original_jpeg_blob_key)
+        if self.small_jpeg_blob_key:
+            blob_keys_to_delete.append(self.small_jpeg_blob_key)
+        if self.retina_small_jpeg_blob_key:
+            blob_keys_to_delete.append(self.retina_small_jpeg_blob_key)
+        blobstore.delete(blob_keys_to_delete)
+
+    def delete(self):
+        self.delete_related_blobs()
+        return db.Model.delete(self)
+
 class PropertyListing(BaseModel):
     title = db.StringProperty(required=True, indexed=False)
     city = db.StringProperty(required=True)
@@ -82,10 +130,11 @@ class PropertyListing(BaseModel):
     property_types = db.StringListProperty(indexed=False)
     keywords = db.StringListProperty(indexed=False)
     geo = db.GeoPtProperty(required=True)
+    body_html = db.TextProperty()
     is_active = db.BooleanProperty(required=True, default=True)
     create_date = db.DateTimeProperty(auto_now_add=True, indexed=False)
-    # image
-    # job to confirm active
+    image = db.ReferenceProperty(Image, indexed=False)
+    # TODO - job to confirm active
 
     @classmethod
     def generate_key_name(cls, **kwargs):
@@ -101,7 +150,7 @@ class FeedItemCache(BaseModel):
     feed_name = db.StringProperty(required=True)
     item_link = db.StringProperty(required=True)
     create_date = db.DateTimeProperty(auto_now_add=True, indexed=False)
-    property_listing = db.ReferenceProperty(PropertyListing, indexed=False)
+    property_listing = db.ReferenceProperty(PropertyListing)
 
     @classmethod
     def generate_key_name(cls, **kwargs):
