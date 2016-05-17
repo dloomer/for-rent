@@ -83,7 +83,7 @@ class FeedItem(object):
         if not self._is_fetched:
             self._fetch()
 
-    def _parse_address(self, address_text):
+    def _parse_address(self, address_text="", known_geo=None):
         address_text = address_text.split(' at ')[0]
         address_text = address_text.strip()
         if address_text.startswith("("):
@@ -93,12 +93,19 @@ class FeedItem(object):
         address_text = address_text.strip()
 
         # TODO: move API key into conig file with .gitignore
-        url = \
-            "https://maps.googleapis.com/maps/api/geocode/json?address=%s,%s" \
-            "&key=AIzaSyCudFnRAe8qVt0mXe2fcmVAzs-BjvRzaf8" % (
+        if address_text:
+            lookup = "address=%s,%s"% (
                 string_utils.unicode_urlencode(address_text),
                 string_utils.unicode_urlencode(self.feed_region)
             )
+        elif known_geo:
+            lookup = "latlng=%s"% ','.join(known_geo)
+        else:
+            return
+
+        url = \
+            "https://maps.googleapis.com/maps/api/geocode/json?%s" \
+            "&key=AIzaSyCudFnRAe8qVt0mXe2fcmVAzs-BjvRzaf8" % lookup
         response_dict = json.loads(urlfetch.fetch(url).content)
         if response_dict['results']:
             top_result = response_dict['results'][0]
@@ -133,7 +140,8 @@ class FeedItem(object):
                 if distance < 0.08 or \
                    (distance < 5.0 and \
                     address_text.lower().startswith(address.lower()) or \
-                    address.lower().startswith(address_text.lower())):
+                    address.lower().startswith(address_text.lower())) or \
+                    len(known_geo):
                     self.geo = geo
                     self.address = address
                     self.city = city
@@ -172,12 +180,16 @@ class CraigslistFeedItem(FeedItem):
         map_address_str = map_address_node.text \
             if map_address_node else ""
         if map_address_str:
-            self._parse_address(map_address_str)
+            self._parse_address(address_text=map_address_str)
         if not self.address:
             small_node = title_text_node.find("small")
             map_address_str = small_node.text if small_node else ""
             if map_address_str:
-                self._parse_address(map_address_str)
+                self._parse_address(address_text=map_address_str)
+        if not self.address and \
+            (self._target_geo_accuracy <= 7 and self._target_geo_accuracy >= 0):
+            self._parse_address(known_geo=self._target_geo)
+
         attr_group_nodes = soup.findAll("p", {'class': "attrgroup"})
         for attr_group_node in attr_group_nodes:
             self.keywords.extend(
