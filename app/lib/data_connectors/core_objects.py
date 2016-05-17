@@ -32,7 +32,7 @@ class PropertyListing(object):
             (not self.db_object.image or self.db_object.image.original_url != image_url):
             img = Image(image_url)
             img.save()
-            self.db_object.image = img.db_object
+            self.db_object.image = img.db_image
             self.is_dirty = True
         # pylint: enable=no-member
         if self.is_dirty:

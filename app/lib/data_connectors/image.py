@@ -178,26 +178,23 @@ class Image(object):
         return blob_key, img_data, [saved_width, saved_height]
 
     def save(self):
-        img = images.Image(self.img_data)
-        orig_blob_key, orig_image_data, orig_dimensions = \
+        file_ = StringIO(self.img_data)
+        img = PIL_Image.open(file_)
+        orig_blob_key, _, orig_dimensions = \
             self._save_gcs_image(
                 img,
                 "image/jpeg",
                 'original'
             )
-
-        file_ = StringIO(orig_image_data)
-        source_img = PIL_Image.open(file_)
-
         small_blob_key, _, small_dimensions = \
             self._save_gcs_image(
-                source_img,
+                img,
                 "image/jpeg",
                 'small'
             )
         retina_small_blob_key, _, retina_small_dimensions = \
             self._save_gcs_image(
-                source_img,
+                img,
                 "image/jpeg",
                 'retina_small'
             )
