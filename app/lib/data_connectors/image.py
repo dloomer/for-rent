@@ -180,7 +180,7 @@ class Image(object):
     def save(self):
         file_ = StringIO(self.img_data)
         img = PIL_Image.open(file_)
-        orig_blob_key, _, orig_dimensions = \
+        original_blob_key, _, orig_dimensions = \
             self._save_gcs_image(
                 img,
                 "image/jpeg",
@@ -202,9 +202,9 @@ class Image(object):
         db_image = core_models.Image(
             key=self._allocated_image_key,
             original_url=self.source_url,
-            small_jpeg_gcs_blob_key=small_blob_key,
-            original_jpeg_gcs_blob_key=orig_blob_key,
-            retina_small_jpeg_gcs_blob_key=retina_small_blob_key,
+            small_jpeg_blob_key=small_blob_key,
+            original_jpeg_blob_key=original_blob_key,
+            retina_small_jpeg_blob_key=retina_small_blob_key,
             small_jpeg_dimensions=small_dimensions,
             original_jpeg_dimensions=orig_dimensions,
             retina_small_jpeg_dimensions=retina_small_dimensions,
