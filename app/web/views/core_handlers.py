@@ -44,3 +44,10 @@ class HomeRequestHandler(BaseHandler):
         logging.debug("headers=%s" % self.request.headers)
 
         #return self.render_template('home.html', **params)
+
+        # import app.lib.services.mail as mail
+        # import app.models.core as core_models
+
+        # property_listing = core_models.PropertyListing.get_by_key_name('47.6057333|-122.3161506')
+        # feed_item = property_listing.feeditemcache_set.get()
+        # mail.send_property_notification(property_listing, feed_item.item_link)
