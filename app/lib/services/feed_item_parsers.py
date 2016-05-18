@@ -99,16 +99,30 @@ class FeedItem(object):
                 string_utils.unicode_urlencode(self.feed_region)
             )
         elif known_geo:
-            lookup = "latlng=%s"% ','.join(known_geo)
+            lookup = "latlng=%s" % ','.join([str(_) for _ in known_geo])
         else:
             return
 
         url = \
             "https://maps.googleapis.com/maps/api/geocode/json?%s" \
             "&key=AIzaSyCudFnRAe8qVt0mXe2fcmVAzs-BjvRzaf8" % lookup
+        import logging
+        logging.debug("url=%s" % url)
         response_dict = json.loads(urlfetch.fetch(url).content)
         if response_dict['results']:
             top_result = response_dict['results'][0]
+            logging.debug("top_result['geometry']['location_type']=%s" % top_result['geometry']['location_type'])
+
+            if top_result['geometry'].get('bounds'):
+                ne_bounds = top_result['geometry']['bounds']['northeast']
+                sw_bounds = top_result['geometry']['bounds']['southwest']
+                boundary_distance = _distance(
+                    (ne_bounds['lat'], ne_bounds['lng']),
+                    (sw_bounds['lat'], sw_bounds['lng'])
+                )
+                logging.debug("boundary_distance=%s" % boundary_distance)
+                # 0.00140772080019, RANGE_INTERPOLATED
+
             if top_result['geometry']['location_type'] == "ROOFTOP":
                 street_number = ""
                 street = ""
@@ -137,11 +151,14 @@ class FeedItem(object):
                 geo = [location['lat'], location['lng']]
                 distance = _distance(geo, self._target_geo) \
                     if self._target_geo else 0
+                logging.debug("distance=%s" % distance)
+                logging.debug("geo=%s" % geo)
+                logging.debug("self._target_geo=%s" % self._target_geo)
                 if distance < 0.08 or \
                    (distance < 5.0 and \
                     address_text.lower().startswith(address.lower()) or \
                     address.lower().startswith(address_text.lower())) or \
-                    len(known_geo):
+                   known_geo is not None:
                     self.geo = geo
                     self.address = address
                     self.city = city
