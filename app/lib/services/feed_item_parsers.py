@@ -223,6 +223,40 @@ class CraigslistFeedItem(FeedItem):
             if first_image_node else ""
         self.posting_body = soup.find("section", {'id': "postingbody"}).text
 
+class KnockFeedItem(FeedItem):
+    def __init__(self, url, feed):
+        super(KnockFeedItem, self).__init__(url, feed)
+
+    def parse(self):
+        super(KnockFeedItem, self).parse()
+
+        listing_dict = json.loads(StringIO(self._response_text))['listing']
+        self.price = listing_dict['leasing']['monthlyRent']
+        bedrooms = int(listing_dict['floorplan']['bedrooms'])
+        bathrooms = int(listing_dict['floorplan']['bathrooms'])
+        square_feet = int(listing_dict['floorplan']['size'])
+        unit_type = listing_dict['floorplan']['unitType']
+        self.title = "%s - %s beds, %s baths, %s sq. ft." % (
+            '${:,.2f}'.format(self.price),
+            bedrooms,
+            bathrooms,
+            '{:,}'.format(square_feet)
+        )
+        coordinates = listing_dict['location']['coordinates']
+        self._target_geo = [
+            coordinates[1],
+            coordinates[0]
+        ]
+        self._target_geo_accuracy = 0
+
+        self._parse_address(address_text=listing_dict['location']['address']['street'])
+        if not self.address:
+            self._parse_address(known_geo=self._target_geo)
+
+        self.keywords = [listing_dict['location']['propertyType']]
+        self.image_url = listing_dict['coverPhoto']['url']
+        self.posting_body = listing_dict['description']['full']
+
 '''
 from app.lib.services.feed_item_parsers import CraigslistFeedItem
 item = CraigslistFeedItem(

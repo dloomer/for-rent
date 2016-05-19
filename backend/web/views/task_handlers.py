@@ -9,7 +9,7 @@ import webapp2
 
 # local application/library specific imports
 from app.lib.data_connectors import feed_config_connector
-from app.lib.services.feed_item_parsers import CraigslistFeedItem
+from app.lib.services.feed_item_parsers import CraigslistFeedItem, KnockFeedItem
 from app.lib.data_connectors.core_objects import PropertyListing
 import app.lib.services.mail as mail
 
@@ -21,8 +21,12 @@ class DataFeedEntriesHandler(webapp2.RequestHandler):
         feeds_map = feed_config_connector.get_feeds_map()
         feed = feeds_map[feed_name]
 
+        if feed['source_type'] == 'craigslist':
+            feed_item_cls = CraigslistFeedItem
+        elif feed['source_type'] == 'knock':
+            feed_item_cls = KnockFeedItem
         for item_url in item_urls:
-            feed_item = CraigslistFeedItem(item_url, feed)
+            feed_item = feed_item_cls(item_url, feed)
             property_listing = PropertyListing.from_parsed_feed_item(feed_item)
             if not property_listing:
                 continue

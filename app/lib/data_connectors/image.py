@@ -119,10 +119,12 @@ def _save_gcs_object(data, file_name, content_type='application/octet-stream', o
 
 class Image(object):
     def _url_for_urlfetch(self, url):
-        if self.feed_config.get('images_hostname_proxy'):
+        if self.feed_config.get('images_hostname_proxy', {}).get('craigslist'):
             parsed = urlparse(url)
             proxied_url = \
-                parsed.scheme + '://' + self.feed_config['images_hostname_proxy'] + parsed.path + \
+                parsed.scheme + '://' + \
+                self.feed_config['images_hostname_proxy']['craigslist'] + \
+                parsed.path + \
                 ('?' + parsed.query if parsed.query else '')
             return proxied_url
         else:

@@ -31,9 +31,8 @@ def send_property_notification(property_listing, item_url):
     message = mail.EmailMessage(
         sender=sender_address,
         subject=subject,
-        to=["Dave Loomer <dloomer@gmail.com>"]
+        to=["Dave Loomer <dloomer@gmail.com>", "Bitchypants <lesley.babb@gmail.com>"]
     )
-    # to=["Dave Loomer <dloomer@gmail.com>", "Bitchypants <lesley.babb@gmail.com>"]
 
     message.body = item_url
     message.html = """<a href="{}">{}</a><br/>
@@ -47,6 +46,6 @@ def send_property_notification(property_listing, item_url):
     urllib.quote_plus(formatted_address),
     "%s,%s" % (geo.lat, geo.lon)
 )
-    #blob_reader = BlobReader(property_listing.image.original_jpeg_blob_key)
-    #message.attachments=[("property.jpg", blob_reader.read())]
+    blob_reader = BlobReader(property_listing.image.original_jpeg_blob_key)
+    message.attachments=[("property.jpg", blob_reader.read())]
     message.send()
