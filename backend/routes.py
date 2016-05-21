@@ -12,6 +12,12 @@ secure_scheme = 'https'
 
 _routes = [
     RedirectRoute(
+        '/batch/enqueue_load_feed_data',
+        batch_handlers.EnqueueLoadFeedDataRequestHandler,
+        name='enqueue_load_feed_data',
+        strict_slash=True
+    ),
+    RedirectRoute(
         '/batch/load_feed_data',
         batch_handlers.LoadFeedDataRequestHandler,
         name='load_feed_data',
