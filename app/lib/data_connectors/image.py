@@ -119,11 +119,18 @@ def _save_gcs_object(data, file_name, content_type='application/octet-stream', o
 
 class Image(object):
     def _url_for_urlfetch(self, url):
-        if self.feed_config.get('images_hostname_proxy', {}).get('craigslist'):
-            parsed = urlparse(url)
+        parsed = urlparse(url)
+
+        images_hostname_proxy = None
+        if parsed.netloc.lower() == "craigslist.org" or \
+           parsed.netloc.lower().endswith(".craigslist.org"):
+            images_hostname_proxy = \
+                self.images_hostname_proxies.get('craigslist')
+
+        if images_hostname_proxy:
             proxied_url = \
                 parsed.scheme + '://' + \
-                self.feed_config['images_hostname_proxy']['craigslist'] + \
+                images_hostname_proxy + \
                 parsed.path + \
                 ('?' + parsed.query if parsed.query else '')
             return proxied_url
@@ -131,9 +138,12 @@ class Image(object):
             return url
 
     def __init__(self, source_url):
-        self.feed_config = feed_config_connector.get_feed_config()
+        self.images_hostname_proxies = feed_config_connector.get_images_hostname_proxies()
         self.source_url = source_url
-        self.img_data = urlfetch.fetch(self._url_for_urlfetch(self.source_url)).content
+        self.img_data = urlfetch.fetch(
+            self._url_for_urlfetch(self.source_url),
+            deadline=20
+        ).content
         self.db_image = None
 
         handmade_key = db.Key.from_path("Image", 1)
