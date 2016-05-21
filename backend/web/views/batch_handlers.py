@@ -30,3 +30,11 @@ class LoadFeedDataRequestHandler(webapp2.RequestHandler):
                     method='GET'
                 )
                 task.add()
+
+class EnqueueLoadFeedDataRequestHandler(webapp2.RequestHandler):
+    def get(self):
+        task = taskqueue.Task(
+            url='/batch/load_feed_data',
+            method='GET'
+        )
+        task.add()
