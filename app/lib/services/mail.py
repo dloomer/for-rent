@@ -11,10 +11,12 @@ def send_property_notification(property_listing, item_url):
         'duplex': "Duplex",
         'flat': "Flat",
         'house': "House",
-        'in-law': "In-Law"
+        'in-law': "In-Law",
+        'townhouse': "Townhouse"
     }
     sender_address = "Rental Bot <noreply@for-rent-1305.appspotmail.com>"
-    property_type = property_listing.property_types[0]
+    property_type = property_listing.property_types[0] \
+        if property_listing.property_types else "Property"
     property_type_description = property_type_map.get(property_type, property_type)
     formatted_address = "%s, %s, %s %s" % (
         property_listing.address,
