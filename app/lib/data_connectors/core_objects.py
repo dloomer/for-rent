@@ -7,6 +7,19 @@ from google.appengine.ext import db
 import app.models.core as core_models
 from app.lib.data_connectors.image import Image
 
+def _feed_item_from_url(feed_name, url):
+    item_key_name = core_models.FeedItemCache.generate_key_name(
+        feed_name=feed_name,
+        item_link=url
+    )
+    return core_models.FeedItemCache.get_by_key_name(item_key_name)
+
+def feed_item_metadata(feed_name, url):
+    db_feed_item = _feed_item_from_url(feed_name, url)
+    # pylint: disable=no-member
+    return db_feed_item.cached_metadata if db_feed_item else {}
+    # pylint: enable=no-member
+
 class PropertyListing(object):
     def __init__(self, image_url=None, **kwargs):
         if isinstance(kwargs['geo'], list):
@@ -39,14 +52,13 @@ class PropertyListing(object):
             self.db_object.put()
 
     @classmethod
-    def from_parsed_feed_item(cls, feed_item):
-        feed_item.parse()
-        if not feed_item.geo or not feed_item.is_active:
+    def from_parsed_feed_item(cls, parsed_item):
+        if not parsed_item.geo or not parsed_item.is_active:
             return
 
         _keywords = []
         _property_types = []
-        for keyword in feed_item.keywords:
+        for keyword in parsed_item.keywords:
             if keyword.lower() in [
                     'house',
                     'apartment',
@@ -54,37 +66,35 @@ class PropertyListing(object):
                     'cottage/cabin',
                     'duplex',
                     'flat',
-                    'in-law'
+                    'in-law',
+                    'townhouse'
                 ]:
                 _property_types.append(keyword)
             else:
                 _keywords.append(keyword)
 
-        _price_str = feed_item.price
-        if _price_str.startswith("$"):
-            _price_str = _price_str[1:]
+        _price = parsed_item.price
+        if (isinstance(_price, str) or isinstance(_price, unicode)) and \
+            _price.startswith("$"):
+            _price = _price[1:]
 
         property_listing = cls(
-            title=feed_item.title,
-            body_html=feed_item.posting_body,
-            start_price=float(_price_str),
-            upper_price=float(_price_str),
-            address=feed_item.address,
-            neighborhood=feed_item.neighborhood,
-            city=feed_item.city,
-            state_code=feed_item.state_code,
-            postal_code=feed_item.postal_code,
-            country_code=feed_item.country_code,
-            geo=db.GeoPt(*feed_item.geo),
+            title=parsed_item.title,
+            body_html=parsed_item.posting_body,
+            start_price=float(_price),
+            upper_price=float(_price),
+            address=parsed_item.address,
+            neighborhood=parsed_item.neighborhood,
+            city=parsed_item.city,
+            state_code=parsed_item.state_code,
+            postal_code=parsed_item.postal_code,
+            country_code=parsed_item.country_code,
+            geo=db.GeoPt(*parsed_item.geo),
             property_types=_property_types,
             keywords=_keywords,
-            image_url=feed_item.image_url
+            image_url=parsed_item.image_url
         )
-        feed_item_key_name = core_models.FeedItemCache.generate_key_name(
-            feed_name=feed_item.feed_name,
-            item_link=feed_item.page_url
-        )
-        db_feed_item = core_models.FeedItemCache.get_by_key_name(feed_item_key_name)
+        db_feed_item = _feed_item_from_url(parsed_item.feed_name, parsed_item.page_url)
         # pylint: disable=no-member
         if db_feed_item and db_feed_item.property_listing != property_listing.db_object:
             db_feed_item.property_listing = property_listing.db_object

@@ -15,16 +15,14 @@ except ImportError:
 
 # local application/library specific imports
 from app.lib.data_connectors.feed_cache import FeedCache
+from app.lib.data_connectors import feed_config_connector
 
-FEED_TYPE_MAP = {
-    'craigslist': "rss",
-    'knock': "json"
-}
 class FeedIngestor(object):
     def __init__(self, feed):
         self.feed_name = feed['name']
         self.source_type = feed['source_type']
-        self.feed_type = FEED_TYPE_MAP[self.source_type]
+        _source_types = feed_config_connector.get_source_types()
+        self.feed_type = _source_types[self.source_type]['feed_type']
         self.feed_url = feed['url']
         self.feed_post_body = feed.get('post_body')
         self.hostname_proxy = feed.get('hostname_proxy')
@@ -49,8 +47,9 @@ class FeedIngestor(object):
             return item['url']
 
     def _fetch(self):
+        cached_metadata = None
         if self.feed_type == "rss":
-            response = urlfetch.fetch(self._url_for_urlfetch(self.feed_url))
+            response = urlfetch.fetch(self._url_for_urlfetch(self.feed_url), deadline=20)
             parsed_feed = feedparser.parse(StringIO(response.content))
             self._results = parsed_feed.entries
         elif self.feed_type == "json":
@@ -58,16 +57,50 @@ class FeedIngestor(object):
                 response = urlfetch.fetch(
                     url=self._url_for_urlfetch(self.feed_url),
                     payload=json.dumps(self.feed_post_body),
-                    method=urlfetch.POST
+                    method=urlfetch.POST,
+                    deadline=20
                 )
             else:
-                response = urlfetch.fetch(self._url_for_urlfetch(self.feed_url))
-            parsed_feed = json.loads(StringIO(response.content))
+                response = urlfetch.fetch(self._url_for_urlfetch(self.feed_url), deadline=20)
+
+            parsed_feed = json.loads(response.content)
             self._results = []
-            for _, _address_results in parsed_feed['data']['results'].items():
-                self._results.extend(_address_results)
-            for _result in self._results:
-                _result['url'] = self.item_url_path + _result['id']
+            if self.source_type == 'knock':
+                for _, _coordinate_content in parsed_feed['data'].items():
+                    for _, _address_results in _coordinate_content['results'].items():
+                        self._results.extend(_address_results)
+                for _result in self._results:
+                    _result['url'] = self.item_url_path + _result['id']
+            elif self.source_type == 'zillow':
+                all_listings = parsed_feed['map']['properties'] + parsed_feed['map']['buildings']
+                for listing in all_listings:
+                    _result = {}
+                    if len(listing) == 8:
+                        # property
+                        _result['geo'] = [float(listing[1])/(10.0**6), float(listing[2])/(10.0**6)]
+                        details = listing[7]
+                        _result['price'] = details[0]
+                        _result['bedrooms'] = details[1]
+                        _result['bathrooms'] = int(details[2])
+                        _result['square_feet'] = details[3]
+                        _result['image_url'] = details[5]
+                        _result['url'] = self.item_url_path + \
+                            "/jsonp/Hdp.htm?zpid=%s&lhdp=true&callback=x" % listing[0]
+                    elif len(listing) == 5:
+                        # building
+                        _result['geo'] = [float(listing[0])/(10.0**6), float(listing[1])/(10.0**6)]
+                        details = listing[4]
+                        _result['price'] = details[0]
+                        _result['bedrooms'] = details[3]
+                        _result['bathrooms'] = int(details[4])
+                        _result['square_feet'] = details[5]
+                        _result['image_url'] = details[1]
+                        _result['url'] = self.item_url_path + \
+                            "/jsonp/Bdp.htm?lat=%s&lon=%s&pageNum=1&lhdp=true&callback=x" % (
+                                _result['geo'][0],
+                                _result['geo'][1]
+                            )
+                    self._results.append(_result)
 
         cache = FeedCache(self.feed_name)
 
@@ -78,7 +111,8 @@ class FeedIngestor(object):
             if self._item_link(result) not in self._cached_links
         ]
         for result in results_not_cached:
-            cache.add_item_link(self._item_link(result))
+            cached_metadata = result if self.feed_type == "json" else None
+            cache.add_item_link(self._item_link(result), cached_metadata=cached_metadata)
 
         self._is_fetched = True
 

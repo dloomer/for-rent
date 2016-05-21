@@ -37,12 +37,10 @@ def _distance(point_a, point_b):
 
     return radius * dist
 
-# TODO - text body property, for keyword matching
-# TODO - how to automatically convey breed restrictions without false positives for
-# "no breed restrictions" etc
 class FeedItem(object):
-    def __init__(self, url, feed, fetched_contents=None):
+    def __init__(self, url, feed, fetched_contents=None, cached_metadata=None):
         self.page_url = url
+        self.user_url = url
         self.price = ""
         self.title = ""
         self.address = ""
@@ -55,6 +53,8 @@ class FeedItem(object):
         self.feed_region = feed['region']
         self.hostname_proxy = feed.get('hostname_proxy')
         self.feed_name = feed['name']
+        self.feed_source_type = feed['source_type']
+        self.cached_metadata = cached_metadata
         self.keywords = []
         self.image_url = ""
         self.posting_body = ""
@@ -68,15 +68,21 @@ class FeedItem(object):
         self.is_active = True
 
     def _url_for_urlfetch(self, url):
+        parsed = urlparse(url)
+
         if self.hostname_proxy:
-            parsed = urlparse(url)
             return parsed.scheme + '://' + self.hostname_proxy + parsed.path + \
                 ('?' + parsed.query if parsed.query else '')
+        elif self.feed_source_type == 'knock':
+            return 'https://api.knockrentals.com/v1' + parsed.path
         else:
             return url
 
     def _fetch(self):
-        self._response_text = urlfetch.fetch(self._url_for_urlfetch(self.page_url)).content
+        self._response_text = urlfetch.fetch(
+            self._url_for_urlfetch(self.page_url),
+            deadline=20
+        ).content
         self._is_fetched = True
 
     def parse(self):
@@ -170,11 +176,16 @@ class FeedItem(object):
             raise Exception(response_dict['error_message'])
 
 class CraigslistFeedItem(FeedItem):
-    def __init__(self, url, feed):
+    def __init__(self, url, feed, fetched_contents=None, cached_metadata=None):
         super(CraigslistFeedItem, self).__init__(url, feed)
 
     def parse(self):
-        super(CraigslistFeedItem, self).parse()
+        super(CraigslistFeedItem, self).__init__(
+            url,
+            feed,
+            fetched_contents=fetched_contents,
+            cached_metadata=cached_metadata
+        )
 
         soup = BeautifulSoup(StringIO(self._response_text), "html.parser")
         title_text_node = soup.find("span", {'class': "postingtitletext"})
@@ -224,25 +235,29 @@ class CraigslistFeedItem(FeedItem):
         self.posting_body = soup.find("section", {'id': "postingbody"}).text
 
 class KnockFeedItem(FeedItem):
-    def __init__(self, url, feed):
-        super(KnockFeedItem, self).__init__(url, feed)
+    def __init__(self, url, feed, fetched_contents=None, cached_metadata=None):
+        super(KnockFeedItem, self).__init__(
+            url,
+            feed,
+            fetched_contents=fetched_contents,
+            cached_metadata=cached_metadata
+        )
 
     def parse(self):
         super(KnockFeedItem, self).parse()
 
-        listing_dict = json.loads(StringIO(self._response_text))['listing']
+        listing_dict = json.loads(self._response_text)['listing']
         self.price = listing_dict['leasing']['monthlyRent']
         bedrooms = int(listing_dict['floorplan']['bedrooms'])
         bathrooms = int(listing_dict['floorplan']['bathrooms'])
         square_feet = int(listing_dict['floorplan']['size'])
-        unit_type = listing_dict['floorplan']['unitType']
         self.title = "%s - %s beds, %s baths, %s sq. ft." % (
             '${:,.2f}'.format(self.price),
             bedrooms,
             bathrooms,
             '{:,}'.format(square_feet)
         )
-        coordinates = listing_dict['location']['coordinates']
+        coordinates = listing_dict['location']['geo']['coordinates']
         self._target_geo = [
             coordinates[1],
             coordinates[0]
@@ -254,14 +269,82 @@ class KnockFeedItem(FeedItem):
             self._parse_address(known_geo=self._target_geo)
 
         self.keywords = [listing_dict['location']['propertyType']]
-        self.image_url = listing_dict['coverPhoto']['url']
+        if listing_dict['coverPhoto']:
+            self.image_url = listing_dict['coverPhoto']['url']
+        elif listing_dict['photos']:
+            self.image_url = listing_dict['photos'][0]['url']
         self.posting_body = listing_dict['description']['full']
 
-'''
-from app.lib.services.feed_item_parsers import CraigslistFeedItem
-item = CraigslistFeedItem(
-    "http://seattle.craigslist.org/see/apa/5569185899.html",
-    {'region': "Seattle, WA, US", 'hostname_proxy': "craigslist.localhost"}
-)
-item.parse()
-'''
+class ZillowFeedItem(FeedItem):
+    def __init__(self, url, feed, fetched_contents=None, cached_metadata=None):
+        super(ZillowFeedItem, self).__init__(
+            url,
+            feed,
+            fetched_contents=fetched_contents,
+            cached_metadata=cached_metadata
+        )
+
+    def parse(self):
+        super(ZillowFeedItem, self).parse()
+
+        self.price = self.cached_metadata['price']
+        bedrooms = self.cached_metadata['bedrooms']
+        bathrooms = self.cached_metadata['bathrooms']
+        square_feet = self.cached_metadata['square_feet']
+        self.image_url = self.cached_metadata['image_url'].replace('/p_a/', '/p_f/')
+        self._target_geo = self.cached_metadata['geo']
+        self._target_geo_accuracy = 0
+        if self.price.endswith("/mo"):
+            self.price = self.price[:-3]
+        if self.price.endswith("+"):
+            self.price = self.price[:-1]
+        if self.price.startswith("$"):
+            self.price = self.price[1:]
+        self.price = self.price.replace(",", "")
+
+        response_text = self._response_text.strip()
+        start_js_1 = "x("
+        start_js_2 = "if (typeof x!==\"undefined\") { x( "
+        body_script = ", \"bodyScript\" : "
+        if response_text.startswith(start_js_1):
+            response_text = response_text[len(start_js_1):].strip()
+        elif response_text.startswith(start_js_2):
+            response_text = response_text[len(start_js_2):].strip()
+        if response_text.find(body_script) > 0:
+            response_text = response_text[:response_text.find(body_script)] + "}"
+
+        listing_dict = json.loads(response_text)
+
+        soup = BeautifulSoup(StringIO(listing_dict['actionBar']), "html.parser")
+        self.user_url = "http://www.zillow.com" + \
+            soup.find("li", {'id': "hdp-popout-menu"}).find("a")['href']
+        soup = BeautifulSoup(StringIO(listing_dict['bodyContent']), "html.parser")
+        addr_city = soup.find("span", {'class': "zsg-h2 addr_city"})
+        if addr_city:
+            address_text = addr_city.text
+        else:
+            addr_city = soup.find("h2", {'class': "zsg-h5"})
+            if addr_city:
+                address_text = addr_city.text
+            else:
+                address_text = ""
+
+        address_split = address_text.split(', ')
+        if len(address_split) > 2:
+            address_text = ', '.join(address_split[:-2])
+        else:
+            address_text = ""
+        self.title = "%s - %s beds, %s baths, %s sq. ft." % (
+            '${:,.2f}'.format(float(self.price)),
+            bedrooms,
+            bathrooms,
+            '{:,}'.format(square_feet)
+        )
+
+        if address_text:
+            self._parse_address(address_text=address_text)
+        if not self.address:
+            self._parse_address(known_geo=self._target_geo)
+
+        self.keywords = ['property']
+        self.posting_body = listing_dict['bodyContent']

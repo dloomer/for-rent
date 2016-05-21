@@ -36,11 +36,12 @@ class FeedCache(object):
 
         return links
 
-    def add_item_link(self, item_link):
+    def add_item_link(self, item_link, cached_metadata=None):
         db_cached = core_models.FeedItemCache \
             .get_or_insert_by_values(
                 feed_name=self.feed_name,
                 item_link=item_link,
+                cached_metadata=cached_metadata,
             )
         db_cached.put()
 
