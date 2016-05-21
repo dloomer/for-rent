@@ -18,3 +18,13 @@ def get_feeds_map(feed_config=None):
     for feed in feeds:
         feeds_map[feed['name']] = feed
     return feeds_map
+
+def get_source_types(feed_config=None):
+    if not feed_config:
+        feed_config = get_feed_config()
+    return feed_config.get('source_types', {})
+
+def get_images_hostname_proxies(feed_config=None):
+    if not feed_config:
+        feed_config = get_feed_config()
+    return feed_config.get('images_hostname_proxies', {})
