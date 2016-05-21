@@ -81,7 +81,7 @@ class Image(db.Model):
     original_jpeg_dimensions = db.ListProperty(item_type=int,indexed=False)
     retina_small_jpeg_dimensions = db.ListProperty(item_type=int,indexed=False)
 
-    compression_metadata = DictProperty(indexed=False)
+    compression_metadata = DictProperty()
 
     create_date = db.DateTimeProperty(auto_now_add=True, indexed=False)
 
@@ -153,6 +153,7 @@ class FeedItemCache(BaseModel):
     item_link = db.StringProperty(required=True)
     create_date = db.DateTimeProperty(auto_now_add=True, indexed=False)
     property_listing = db.ReferenceProperty(PropertyListing)
+    cached_metadata = SerializedDataProperty()
 
     @classmethod
     def generate_key_name(cls, **kwargs):
