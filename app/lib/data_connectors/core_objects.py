@@ -58,10 +58,13 @@ class PropertyListing(object):
 
             # pylint: disable=no-member
             prev_active = self.db_object.is_active
-            for prop_name, prop_value in kwargs.iteritems():
-                if getattr(self.db_object, prop_name) != prop_value:
-                    setattr(self.db_object, prop_name, prop_value)
-                    self.is_dirty = True
+            if kwargs.get('is_active'):
+                for prop_name, prop_value in kwargs.iteritems():
+                    if getattr(self.db_object, prop_name) != prop_value:
+                        setattr(self.db_object, prop_name, prop_value)
+                        self.is_dirty = True
+            else:
+                self.db_object.is_active = False
 
             if self.db_object.is_active != prev_active:
                 if self.db_object.is_active:
@@ -151,8 +154,14 @@ class PropertyListing(object):
                         db_feed_item.put()
                     # pylint: enable=no-member
             return
-        if not geo:
+
+        if db_object and not is_active:
+            logging.info("Inactivating property listing at URL(s) %s", user_urls)
+        elif not geo:
+            # require geo when we're not inactivating something.
             return
+
+        geo_pt = db.GeoPt(*geo) if geo else None
 
         # pylint: disable=no-value-for-parameter
         property_listing = cls(
@@ -166,7 +175,7 @@ class PropertyListing(object):
             state_code=state_code,
             postal_code=postal_code,
             country_code=country_code,
-            geo=db.GeoPt(*geo),
+            geo=geo_pt,
             property_types=_property_types,
             keywords=_keywords,
             image_url=image_url,

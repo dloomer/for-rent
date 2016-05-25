@@ -48,7 +48,14 @@ def _fact_contains(fact_value, search_for):
         return fact_value == search_for
 
 class FeedItem(object):
-    def __init__(self, url, feed, fetched_contents=None, cached_metadata=None):
+    def __init__(
+            self,
+            url,
+            feed,
+            fetched_contents=None,
+            cached_metadata=None,
+            cached_location_data=None
+        ):
         self.page_url = url
         self.user_url = url
         self.price = ""
@@ -72,7 +79,7 @@ class FeedItem(object):
         self.posting_body = ""
         self.is_rejected = False
         self._is_fetched = False
-        self._response = None
+        self._http_response = None
         self._target_geo = []
         self._target_geo_accuracy = -1
         if fetched_contents:
@@ -92,10 +99,11 @@ class FeedItem(object):
             return url
 
     def _fetch(self):
-        self._response_text = urlfetch.fetch(
+        self._http_response = urlfetch.fetch(
             self._url_for_urlfetch(self.page_url),
             deadline=20
-        ).content
+        )
+        self._response_text = self._http_response.content
         self._is_fetched = True
 
     def parse(self):
@@ -104,6 +112,9 @@ class FeedItem(object):
 
     def validate(self):
         self.is_rejected = False
+        if not self.is_active:
+            # Cannot be both inactive and rejected.
+            return
         feed_config = feed_config_connector.get_feed_config()
         filter_criteria = feed_config.get('post_filter_criteria', {})
         _source_types = feed_config_connector.get_source_types(feed_config=feed_config)
@@ -244,8 +255,21 @@ class FeedItem(object):
             return ZillowFeedItem(item_url, feed, cached_metadata=cached_metadata)
 
 class CraigslistFeedItem(FeedItem):
-    def __init__(self, url, feed, fetched_contents=None, cached_metadata=None):
-        super(CraigslistFeedItem, self).__init__(url, feed)
+    def __init__(
+            self,
+            url,
+            feed,
+            fetched_contents=None,
+            cached_metadata=None,
+            cached_location_data=None
+        ):
+        super(CraigslistFeedItem, self).__init__(
+            url,
+            feed,
+            fetched_contents=fetched_contents,
+            cached_metadata=cached_metadata,
+            cached_location_data=cached_location_data
+        )
 
     def parse(self):
         super(CraigslistFeedItem, self).parse()
@@ -298,12 +322,20 @@ class CraigslistFeedItem(FeedItem):
         self.posting_body = soup.find("section", {'id': "postingbody"}).text
 
 class KnockFeedItem(FeedItem):
-    def __init__(self, url, feed, fetched_contents=None, cached_metadata=None):
+    def __init__(
+            self,
+            url,
+            feed,
+            fetched_contents=None,
+            cached_metadata=None,
+            cached_location_data=None
+        ):
         super(KnockFeedItem, self).__init__(
             url,
             feed,
             fetched_contents=fetched_contents,
-            cached_metadata=cached_metadata
+            cached_metadata=cached_metadata,
+            cached_location_data=cached_location_data
         )
 
     def parse(self):
@@ -347,12 +379,20 @@ class KnockFeedItem(FeedItem):
             len(response_dict.get('requestable_slots', [])) > 0
 
 class ZillowFeedItem(FeedItem):
-    def __init__(self, url, feed, fetched_contents=None, cached_metadata=None):
+    def __init__(
+            self,
+            url,
+            feed,
+            fetched_contents=None,
+            cached_metadata=None,
+            cached_location_data=None
+        ):
         super(ZillowFeedItem, self).__init__(
             url,
             feed,
             fetched_contents=fetched_contents,
-            cached_metadata=cached_metadata
+            cached_metadata=cached_metadata,
+            cached_location_data=cached_location_data
         )
 
     def parse(self):
@@ -384,8 +424,27 @@ class ZillowFeedItem(FeedItem):
             response_text = response_text[len(start_js_2):].strip()
         if response_text.find(body_script) > 0:
             response_text = response_text[:response_text.find(body_script)] + "}"
+        if response_text.endswith(");"):
+            response_text = response_text[:-2].strip()
 
-        listing_dict = json.loads(response_text)
+        try:
+            listing_dict = json.loads(response_text)
+        except ValueError:
+            if self._http_response.status_code in [404]:
+                self.is_active = False
+                return
+            else:
+                logging.debug("self.page_url=%s", self.page_url)
+                logging.debug("self.user_url=%s", self.user_url)
+                logging.debug("response_text=%s", response_text)
+                logging.debug("self._http_response.status_code=%s", self._http_response.status_code)
+                logging.debug("self._http_response.headers=%s", self._http_response.headers)
+                raise
+
+        if listing_dict.get('redirectLocation') and \
+            (not listing_dict.get('actionBar') or not listing_dict.get('bodyContent')):
+            self.is_active = False
+            return
 
         soup = BeautifulSoup(StringIO(listing_dict['actionBar']), "html.parser")
         self.user_url = "http://www.zillow.com" + \
