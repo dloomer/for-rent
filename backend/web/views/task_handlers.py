@@ -9,7 +9,7 @@ import webapp2
 
 # local application/library specific imports
 from app.lib.data_connectors import feed_config_connector
-from app.lib.services.feed_item_parsers import CraigslistFeedItem, KnockFeedItem, ZillowFeedItem
+from app.lib.services.feed_item_parsers import FeedItem
 from app.lib.data_connectors.core_objects import PropertyListing, feed_item_metadata
 import app.lib.services.mail as mail
 
@@ -21,23 +21,17 @@ class DataFeedEntriesHandler(webapp2.RequestHandler):
         feeds_map = feed_config_connector.get_feeds_map()
         feed = feeds_map[feed_name]
 
-        if feed['source_type'] == 'craigslist':
-            feed_item_cls = CraigslistFeedItem
-        elif feed['source_type'] == 'knock':
-            feed_item_cls = KnockFeedItem
-        elif feed['source_type'] == 'zillow':
-            feed_item_cls = ZillowFeedItem
         for item_url in item_urls:
             if feed['source_type'] in ['zillow']:
                 cached_metadata = feed_item_metadata(feed_name, item_url)
             else:
                 cached_metadata = None
-            feed_item = feed_item_cls(item_url, feed, cached_metadata=cached_metadata)
+            feed_item = FeedItem.from_feed(feed, item_url, cached_metadata=cached_metadata)
             feed_item.parse()
             property_listing = PropertyListing.from_parsed_feed_item(feed_item)
-            if not property_listing:
+            if not property_listing or not property_listing.db_object:
                 continue
-            if property_listing.is_new:
+            if property_listing.is_new or property_listing.is_reactivated:
                 mail.send_property_notification(property_listing.db_object, feed_item.user_url)
             elif property_listing.is_dirty:
                 # update existing inbox items

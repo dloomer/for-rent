@@ -12,9 +12,9 @@ secure_scheme = 'https'
 
 _routes = [
     RedirectRoute(
-        '/batch/enqueue_load_feed_data',
-        batch_handlers.EnqueueLoadFeedDataRequestHandler,
-        name='enqueue_load_feed_data',
+        '/batch/enqueue_task',
+        batch_handlers.EnqueueTaskRequestHandler,
+        name='enqueue_task',
         strict_slash=True
     ),
     RedirectRoute(
@@ -23,6 +23,12 @@ _routes = [
         name='load_feed_data',
         strict_slash=True
     ),
+    RedirectRoute(
+        '/batch/refetch_property_listing_statuses',
+        batch_handlers.RefetchListingStatusRequestHandler,
+        name='refresh_property_listing_statuses',
+        strict_slash=True
+    ),    
     RedirectRoute(
         '/task/process_data_feed_entries',
         task_handlers.DataFeedEntriesHandler,

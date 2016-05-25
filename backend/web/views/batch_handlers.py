@@ -9,8 +9,10 @@ import webapp2
 from google.appengine.api import taskqueue
 
 # local application/library specific imports
-from app.lib.data_connectors import feed_config_connector
+from app.lib.data_connectors import feed_config_connector, core_objects
 from app.lib.services.feed_ingestor import FeedIngestor
+from app.lib.services.feed_item_parsers import FeedItem
+from app.lib.data_connectors.core_objects import PropertyListing, feed_item_metadata
 
 class LoadFeedDataRequestHandler(webapp2.RequestHandler):
     def get(self):
@@ -31,10 +33,33 @@ class LoadFeedDataRequestHandler(webapp2.RequestHandler):
                 )
                 task.add()
 
-class EnqueueLoadFeedDataRequestHandler(webapp2.RequestHandler):
+class RefetchListingStatusRequestHandler(webapp2.RequestHandler):
+    def get(self):
+
+        feeds_map = feed_config_connector.get_feeds_map()
+
+        active_properties = core_objects.get_active_property_listings()
+        for property_listing in active_properties:
+            parsed_feed_items = []
+            for feed_item in core_objects.get_listing_source_items(property_listing):
+                feed = feeds_map[feed_item.feed_name]
+                item_url = feed_item.item_link
+                if feed['source_type'] in ['zillow']:
+                    cached_metadata = feed_item_metadata(feed_item.feed_name, item_url)
+                else:
+                    cached_metadata = None
+                feed_item = FeedItem.from_feed(feed, item_url, cached_metadata=cached_metadata)
+                feed_item.parse()
+                parsed_feed_items.append(feed_item)
+            property_listing = PropertyListing.from_parsed_feed_items(
+                parsed_feed_items,
+                db_object=property_listing
+            )
+
+class EnqueueTaskRequestHandler(webapp2.RequestHandler):
     def get(self):
         task = taskqueue.Task(
-            url='/batch/load_feed_data',
+            url=self.request.get("url"),
             method='GET'
         )
         task.add()

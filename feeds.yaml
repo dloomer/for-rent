@@ -261,6 +261,60 @@ feeds:
     url: http://www.zillow.com/search/GetResults.htm?spt=homes&status=000010&lt=000000&ht=111101&mp=1200,2700&sf=600,&pets=1&rect=-122329459,47613921,-122302766,47629194&p=1&search=maplist&rid=16037&rt=6&zoom=10
     item_url_path: http://www.zillow.com
     region: "Seattle, WA, US"
+  - name: eastlake-zillow
+    source_type: zillow
+    description: Eastlake
+    url: http://www.zillow.com/search/GetResults.htm?spt=homes&status=000010&lt=000000&ht=111101&mp=1200,2700&sf=600,&pets=1&rect=-122330232,47634573,-122316671,47652095&p=1&search=maplist&rid=16037&rt=6&zoom=10
+    item_url_path: http://www.zillow.com
+    region: "Seattle, WA, US"
+  - name: west-seattle-zillow
+    source_type: zillow
+    description: West Seattle/Alki
+    url: http://www.zillow.com/search/GetResults.htm?spt=homes&status=000010&lt=000000&ht=111101&mp=1200,2700&sf=600,&pets=1&rect=-122420654,47548295,-122344093,47593463&p=1&search=maplist&rid=16037&rt=6&zoom=10
+    item_url_path: http://www.zillow.com
+    region: "Seattle, WA, US"
+  - name: wallingford-zillow
+    source_type: zillow
+    description: Wallingford/Fremont
+    url: http://www.zillow.com/search/GetResults.htm?spt=homes&status=000010&lt=000000&ht=111101&mp=1200,2700&sf=600,&pets=1&rect=-122367482,47648452,-122322850,47664929&p=1&search=maplist&rid=16037&rt=6&zoom=10
+    item_url_path: http://www.zillow.com
+    region: "Seattle, WA, US"
+  - name: ballard-zillow
+    source_type: zillow
+    description: Ballard/Fremont
+    url: http://www.zillow.com/search/GetResults.htm?spt=homes&status=000010&lt=000000&ht=111101&mp=1200,2700&sf=600,&pets=1&rect=-122398553,47659726,-122367482,47682383&p=1&search=maplist&rid=16037&rt=6&zoom=10
+    item_url_path: http://www.zillow.com
+    region: "Seattle, WA, US"
+  - name: squire-park-zillow
+    source_type: zillow
+    description: Squire Park/Madrona/Leschi
+    url: http://www.zillow.com/search/GetResults.htm?spt=homes&status=000010&lt=000000&ht=111101&mp=1200,2700&sf=600,&pets=1&rect=-122320404,47590395,-122281609,47615280&p=1&search=maplist&rid=16037&rt=6&zoom=10
+    item_url_path: http://www.zillow.com
+    region: "Seattle, WA, US"
+  - name: downtown-zillow
+    source_type: zillow
+    description: Downtown/First Hill
+    url: http://www.zillow.com/search/GetResults.htm?spt=homes&status=000010&lt=000000&ht=111101&mp=1200,2700&sf=600,&pets=1&rect=-122359028,47601971,-122321091,47618636&p=1&search=maplist&rid=16037&rt=6&zoom=10
+    item_url_path: http://www.zillow.com
+    region: "Seattle, WA, US"
+  - name: slu-zillow
+    source_type: zillow
+    description: South Lake Union/Lower Queene Anne
+    url: http://www.zillow.com/search/GetResults.htm?spt=homes&status=000010&lt=000000&ht=111101&mp=1200,2700&sf=600,&pets=1&rect=-122371216,47618636,-122328816,47629627&p=1&search=maplist&rid=16037&rt=6&zoom=10
+    item_url_path: http://www.zillow.com
+    region: "Seattle, WA, US"
+  - name: queen-anne-zillow
+    source_type: zillow
+    description: Queen Anne
+    url: http://www.zillow.com/search/GetResults.htm?spt=homes&status=000010&lt=000000&ht=111101&mp=1200,2700&sf=600,&pets=1&rect=-122377567,47629627,-122342377,47639923&p=1&search=maplist&rid=16037&rt=6&zoom=10
+    item_url_path: http://www.zillow.com
+    region: "Seattle, WA, US"
+  - name: columbia-city-zillow
+    source_type: zillow
+    description: Mt Baker/Columbia City
+    url: http://www.zillow.com/search/GetResults.htm?spt=homes&status=000010&lt=000000&ht=111101&mp=1200,2700&sf=600,&pets=1&rect=-122313709,47560749,-122264786,47590164&p=1&search=maplist&rid=16037&rt=6&zoom=10
+    item_url_path: http://www.zillow.com
+    region: "Seattle, WA, US"
 source_types:
   craigslist:
     feed_type: rss
@@ -268,5 +322,10 @@ source_types:
     feed_type: json
   zillow:
     feed_type: json
+    post_filter_criteria:
+      facts:
+        pets:
+          operation: must_contain
+          value: large dogs
 images_hostname_proxies:
     craigslist: images.craigslist.loomer.net

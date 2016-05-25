@@ -1,6 +1,11 @@
 cron:
 - description: Load all feeds
-  url: /batch/enqueue_load_feed_data
+  url: /batch/enqueue_task?url=/batch/load_feed_data
   schedule: every 30 minutes from 9:00 to 22:00
+  timezone: America/Chicago
+  target: backend
+- description: Re-fetch and update feed items for all properties
+  url: /batch/enqueue_task?url=/batch/refetch_property_listing_statuses
+  schedule: every day 6:00
   timezone: America/Chicago
   target: backend

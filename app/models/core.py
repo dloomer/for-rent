@@ -1,8 +1,8 @@
+import copy
 import pickle
 
 from google.appengine.ext import blobstore, db
 
-from app.lib.utils import string_utils
 
 def concat_key_elements(elements):
     return '|'.join(elements)
@@ -43,7 +43,7 @@ class DictProperty(SerializedDataProperty):
     def validate(self, value):
         if not isinstance(value, dict):
             raise db.BadValueError('Property %s needs to be convertible '
-                                                 'to a dict instance (%s) of class dict' % (self.name, value))
+                                   'to a dict instance (%s) of class dict' % (self.name, value))
         return super(DictProperty, self).validate(value)
 
 class BaseModel(db.Model):
@@ -57,7 +57,7 @@ class BaseModel(db.Model):
         return cls.get_or_insert(cls.generate_key_name(**kwargs), **kwargs)
 
     @classmethod
-    def get_or_insert_with_flag(cls, **kwargs):
+    def get_or_insert_with_flag(cls, create=True, **kwargs):
         @db.transactional
         def _tx():
             key_name = cls.generate_key_name(**kwargs)
@@ -66,6 +66,8 @@ class BaseModel(db.Model):
             )
             if entity:
                 return entity, False
+            if not create:
+                return None, False
             entity = cls(key_name=key_name, **kwargs)
             entity.put()
             return entity, True
@@ -77,9 +79,9 @@ class Image(db.Model):
     original_jpeg_blob_key = db.StringProperty(indexed=False)
     retina_small_jpeg_blob_key = db.StringProperty(indexed=False)
 
-    small_jpeg_dimensions = db.ListProperty(item_type=int,indexed=False)
-    original_jpeg_dimensions = db.ListProperty(item_type=int,indexed=False)
-    retina_small_jpeg_dimensions = db.ListProperty(item_type=int,indexed=False)
+    small_jpeg_dimensions = db.ListProperty(item_type=int, indexed=False)
+    original_jpeg_dimensions = db.ListProperty(item_type=int, indexed=False)
+    retina_small_jpeg_dimensions = db.ListProperty(item_type=int, indexed=False)
 
     compression_metadata = DictProperty()
 
@@ -90,9 +92,8 @@ class Image(db.Model):
         return "%s/%s/%s.jpg" % (gcs_bucket_folder_url, self.key().id(), size)
 
     def to_dict(self, thumbnails_only=False):
-        d = {
+        dict_ = {
             'id': self.key().id(),
-            'src': self.image_source_name,
             'url': self.original_url,
             't_url': self.serving_url('t'),
             't_dim': self.small_jpeg_dimensions,
@@ -100,11 +101,11 @@ class Image(db.Model):
             'rt_dim': self.retina_small_jpeg_dimensions,
         }
         if not thumbnails_only:
-            d.update({
+            dict_.update({
                 'o_url': self.serving_url('o'),
                 'o_dim': self.original_jpeg_dimensions,
             })
-        return d
+        return dict_
     def delete_related_blobs(self):
         blob_keys_to_delete = []
         if self.original_jpeg_blob_key:
@@ -134,6 +135,7 @@ class PropertyListing(BaseModel):
     geo = db.GeoPtProperty(required=True)
     body_html = db.TextProperty()
     is_active = db.BooleanProperty(required=True, default=True)
+    inactive_since_date = db.DateTimeProperty(indexed=False)
     create_date = db.DateTimeProperty(auto_now_add=True, indexed=False)
     image = db.ReferenceProperty(Image, indexed=False)
     # TODO - job to confirm active

@@ -2,6 +2,7 @@
 
 # standard library imports
 import json
+import logging
 from StringIO import StringIO
 from urlparse import urlparse
 from math import sin, cos, sqrt, atan2, radians
@@ -16,6 +17,7 @@ except ImportError:
 
 # local application/library specific imports
 from app.lib.utils import string_utils
+from app.lib.data_connectors import feed_config_connector
 
 def _distance(point_a, point_b):
     radius = 6372.795
@@ -37,6 +39,14 @@ def _distance(point_a, point_b):
 
     return radius * dist
 
+def _fact_contains(fact_value, search_for):
+    if isinstance(fact_value, list):
+        return search_for.lower() in [_.lower() for _ in fact_value]
+    elif isinstance(fact_value, str) or isinstance(fact_value, unicode):
+        return fact_value.lower().find(search_for.lower()) >= 0
+    else:
+        return fact_value == search_for
+
 class FeedItem(object):
     def __init__(self, url, feed, fetched_contents=None, cached_metadata=None):
         self.page_url = url
@@ -54,10 +64,13 @@ class FeedItem(object):
         self.hostname_proxy = feed.get('hostname_proxy')
         self.feed_name = feed['name']
         self.feed_source_type = feed['source_type']
+        self.feed_post_filter_criteria = feed.get('post_filter_criteria', {})
         self.cached_metadata = cached_metadata
         self.keywords = []
+        self.facts = {}
         self.image_url = ""
         self.posting_body = ""
+        self.is_rejected = False
         self._is_fetched = False
         self._response = None
         self._target_geo = []
@@ -89,6 +102,50 @@ class FeedItem(object):
         if not self._is_fetched:
             self._fetch()
 
+    def validate(self):
+        self.is_rejected = False
+        feed_config = feed_config_connector.get_feed_config()
+        filter_criteria = feed_config.get('post_filter_criteria', {})
+        _source_types = feed_config_connector.get_source_types(feed_config=feed_config)
+        filter_criteria.update(_source_types[self.feed_source_type].get('post_filter_criteria', {}))
+        filter_criteria.update(self.feed_post_filter_criteria)
+        for validation_group_name, validation_group in \
+            filter_criteria.items():
+            if validation_group_name == 'facts':
+                for fact_name, criteria in validation_group.items():
+                    if criteria['operation'] == "must_contain":
+                        if not _fact_contains(self.facts.get(fact_name, ""), criteria['value']):
+                            logging.info(
+                                "Rejecting feed item %s: Fact '%s' does not contain '%s'",
+                                self.page_url,
+                                fact_name,
+                                criteria['value']
+                            )
+                            logging.debug("self.facts=%s", self.facts)
+                            logging.debug(
+                                "filter_criteria=%s",
+                                filter_criteria
+                            )
+                            self.is_rejected = True
+                            return
+                    elif criteria['operation'] == "must_not_contain":
+                        if self.facts.get(fact_name, "") and \
+                            _fact_contains(self.facts[fact_name], criteria['value']):
+                            logging.info(
+                                "Rejecting feed item %s: Fact '%s' contains '%s'",
+                                self.page_url,
+                                fact_name,
+                                criteria['value']
+                            )
+                            logging.debug("self.facts=%s", self.facts)
+                            logging.debug(
+                                "filter_criteria=%s",
+                                filter_criteria
+                            )
+                            self.is_rejected = True
+                            return
+
+
     def _parse_address(self, address_text="", known_geo=None):
         address_text = address_text.split(' at ')[0]
         address_text = address_text.strip()
@@ -112,12 +169,14 @@ class FeedItem(object):
         url = \
             "https://maps.googleapis.com/maps/api/geocode/json?%s" \
             "&key=AIzaSyCudFnRAe8qVt0mXe2fcmVAzs-BjvRzaf8" % lookup
-        import logging
-        logging.debug("url=%s" % url)
+        logging.debug("url=%s", url)
         response_dict = json.loads(urlfetch.fetch(url).content)
         if response_dict['results']:
             top_result = response_dict['results'][0]
-            logging.debug("top_result['geometry']['location_type']=%s" % top_result['geometry']['location_type'])
+            logging.debug(
+                "top_result['geometry']['location_type']=%s",
+                top_result['geometry']['location_type']
+            )
 
             if top_result['geometry'].get('bounds'):
                 ne_bounds = top_result['geometry']['bounds']['northeast']
@@ -126,7 +185,7 @@ class FeedItem(object):
                     (ne_bounds['lat'], ne_bounds['lng']),
                     (sw_bounds['lat'], sw_bounds['lng'])
                 )
-                logging.debug("boundary_distance=%s" % boundary_distance)
+                logging.debug("boundary_distance=%s", boundary_distance)
                 # 0.00140772080019, RANGE_INTERPOLATED
 
             if top_result['geometry']['location_type'] == "ROOFTOP":
@@ -157,9 +216,9 @@ class FeedItem(object):
                 geo = [location['lat'], location['lng']]
                 distance = _distance(geo, self._target_geo) \
                     if self._target_geo else 0
-                logging.debug("distance=%s" % distance)
-                logging.debug("geo=%s" % geo)
-                logging.debug("self._target_geo=%s" % self._target_geo)
+                logging.debug("distance=%s", distance)
+                logging.debug("geo=%s", geo)
+                logging.debug("self._target_geo=%s", self._target_geo)
                 if distance < 0.08 or \
                    (distance < 5.0 and \
                     address_text.lower().startswith(address.lower()) or \
@@ -175,17 +234,21 @@ class FeedItem(object):
         else:
             raise Exception(response_dict['error_message'])
 
+    @staticmethod
+    def from_feed(feed, item_url, cached_metadata=None):
+        if feed['source_type'] == 'craigslist':
+            return CraigslistFeedItem(item_url, feed, cached_metadata=cached_metadata)
+        elif feed['source_type'] == 'knock':
+            return KnockFeedItem(item_url, feed, cached_metadata=cached_metadata)
+        elif feed['source_type'] == 'zillow':
+            return ZillowFeedItem(item_url, feed, cached_metadata=cached_metadata)
+
 class CraigslistFeedItem(FeedItem):
     def __init__(self, url, feed, fetched_contents=None, cached_metadata=None):
         super(CraigslistFeedItem, self).__init__(url, feed)
 
     def parse(self):
-        super(CraigslistFeedItem, self).__init__(
-            url,
-            feed,
-            fetched_contents=fetched_contents,
-            cached_metadata=cached_metadata
-        )
+        super(CraigslistFeedItem, self).parse()
 
         soup = BeautifulSoup(StringIO(self._response_text), "html.parser")
         title_text_node = soup.find("span", {'class': "postingtitletext"})
@@ -275,6 +338,14 @@ class KnockFeedItem(FeedItem):
             self.image_url = listing_dict['photos'][0]['url']
         self.posting_body = listing_dict['description']['full']
 
+        url = "https://api.knockrentals.com/v1/listing/rd2eAxAqOQM88Wxg/availableTimes"
+        response_dict = json.loads(urlfetch.fetch(url).content)
+        self.is_active = \
+            len(response_dict.get('acceptable_slots', [])) > 0 or \
+            len(response_dict.get('open_house_slots', [])) > 0 or \
+            len(response_dict.get('prime_time_slots', [])) > 0 or \
+            len(response_dict.get('requestable_slots', [])) > 0
+
 class ZillowFeedItem(FeedItem):
     def __init__(self, url, feed, fetched_contents=None, cached_metadata=None):
         super(ZillowFeedItem, self).__init__(
@@ -291,7 +362,8 @@ class ZillowFeedItem(FeedItem):
         bedrooms = self.cached_metadata['bedrooms']
         bathrooms = self.cached_metadata['bathrooms']
         square_feet = self.cached_metadata['square_feet']
-        self.image_url = self.cached_metadata['image_url'].replace('/p_a/', '/p_f/')
+        if self.cached_metadata['image_url']:
+            self.image_url = self.cached_metadata['image_url'].replace('/p_a/', '/p_f/')
         self._target_geo = self.cached_metadata['geo']
         self._target_geo_accuracy = 0
         if self.price.endswith("/mo"):
@@ -346,5 +418,53 @@ class ZillowFeedItem(FeedItem):
         if not self.address:
             self._parse_address(known_geo=self._target_geo)
 
+        self.is_active = False
+        avail_node = soup.find("div", {'data-tableid': "available"})
+        if avail_node:
+            self.is_active = True
+        else:
+            listing_icon = soup.find("span", {'id': "listing-icon"})
+            if listing_icon:
+                self.is_active = listing_icon['data-icon-class'] == "zsg-icon-for-rent"
+
         self.keywords = ['property']
         self.posting_body = listing_dict['bodyContent']
+
+        def _fact_numeric_value(fact_str):
+            if fact_str.endswith(" sqft"):
+                fact_str = fact_str[:-5]
+            fact_str = fact_str.replace(',', '')
+            if fact_str.startswith('$'):
+                fact_str = fact_str[1:]
+            return float(fact_str)
+
+        if soup.find("div", {'class': "building-attrs-group"}):
+            fact_group_container_nodes = soup.findAll("div", {'class': "building-attrs-group"})
+        elif soup.find("div", {'class': "fact-group-container"}):
+            fact_group_container_nodes = soup.findAll("div", {'class': "fact-group-container"})
+        else:
+            fact_group_container_nodes = []
+        for fact_group_container_node in fact_group_container_nodes:
+            h3_node = fact_group_container_node.find("h3")
+            group_title = h3_node.text if h3_node else ""
+            if not group_title:
+                h4_node = fact_group_container_node.find("h4")
+                group_title = h4_node.text if h4_node else ""
+            for list_item_node in fact_group_container_node.findAll("li"):
+                node_text = list_item_node.text
+                if not node_text.find(":"):
+                    continue
+                fact_name, _, fact_str = node_text.partition(': ')
+                if not fact_name:
+                    continue
+                if not fact_str:
+                    self.keywords.append(fact_name.lower())
+                else:
+                    fact_key = string_utils.slugify(fact_name).lower()
+                    try:
+                        self.facts[fact_key] = _fact_numeric_value(fact_str)
+                    except ValueError:
+                        if fact_str in ["Yes", "No"]:
+                            self.facts[fact_key] = fact_str == "Yes"
+                        else:
+                            self.facts[fact_key] = fact_str.split(', ')
