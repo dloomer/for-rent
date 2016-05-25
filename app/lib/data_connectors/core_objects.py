@@ -92,6 +92,7 @@ class PropertyListing(object):
         address, neighborhood, city, state_code, postal_code, country_code = \
             "", "", "", "", "", ""
         _keywords, _property_types = [], []
+        _facts = {}
         image_url = ""
         is_active = False
         user_urls = []
@@ -120,6 +121,8 @@ class PropertyListing(object):
                     _property_types.append(keyword)
                 else:
                     _keywords.append(keyword)
+
+            _facts.update(parsed_item.facts)
 
             _price = parsed_item.price
             if (isinstance(_price, str) or isinstance(_price, unicode)) and \
@@ -178,6 +181,7 @@ class PropertyListing(object):
             geo=geo_pt,
             property_types=_property_types,
             keywords=_keywords,
+            facts=_facts,
             image_url=image_url,
             is_active=is_active,
             db_object=db_object

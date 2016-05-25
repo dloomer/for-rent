@@ -48,7 +48,21 @@ class RefetchListingStatusRequestHandler(webapp2.RequestHandler):
                     cached_metadata = feed_item_metadata(feed_item.feed_name, item_url)
                 else:
                     cached_metadata = None
-                feed_item = FeedItem.from_feed(feed, item_url, cached_metadata=cached_metadata)
+                cached_location_data = {
+                    'geo': [property_listing.geo.lat, property_listing.geo.lon],
+                    'address': property_listing.address,
+                    'city': property_listing.city,
+                    'postal_code': property_listing.postal_code,
+                    'neighborhood': property_listing.neighborhood,
+                    'state_code': property_listing.state_code,
+                    'country_code': property_listing.country_code
+                }
+                feed_item = FeedItem.from_feed(
+                    feed,
+                    item_url,
+                    cached_metadata=cached_metadata,
+                    cached_location_data=cached_location_data
+                )
                 feed_item.parse()
                 parsed_feed_items.append(feed_item)
             property_listing = PropertyListing.from_parsed_feed_items(

@@ -73,6 +73,7 @@ class FeedItem(object):
         self.feed_source_type = feed['source_type']
         self.feed_post_filter_criteria = feed.get('post_filter_criteria', {})
         self.cached_metadata = cached_metadata
+        self.cached_location_data = cached_location_data
         self.keywords = []
         self.facts = {}
         self.image_url = ""
@@ -86,6 +87,16 @@ class FeedItem(object):
             self._response_text = fetched_contents
             self._is_fetched = True
         self.is_active = True
+
+        if self.cached_location_data:
+            # Property location does not change. Save an API call later.
+            self.geo = self.cached_location_data.get('geo')
+            self.address = self.cached_location_data.get('address')
+            self.city = self.cached_location_data.get('city')
+            self.postal_code = self.cached_location_data.get('postal_code')
+            self.neighborhood = self.cached_location_data.get('neighborhood')
+            self.state_code = self.cached_location_data.get('state_code')
+            self.country_code = self.cached_location_data.get('country_code')
 
     def _url_for_urlfetch(self, url):
         parsed = urlparse(url)
@@ -158,6 +169,10 @@ class FeedItem(object):
 
 
     def _parse_address(self, address_text="", known_geo=None):
+        if self.geo:
+            # Already have our location. Save an API call.
+            return
+
         address_text = address_text.split(' at ')[0]
         address_text = address_text.strip()
         if address_text.startswith("("):
@@ -246,13 +261,30 @@ class FeedItem(object):
             raise Exception(response_dict['error_message'])
 
     @staticmethod
-    def from_feed(feed, item_url, cached_metadata=None):
+    def from_feed(
+            feed,
+            item_url,
+            fetched_contents=None,
+            cached_metadata=None,
+            cached_location_data=None
+        ):
+
+        cls = None
         if feed['source_type'] == 'craigslist':
-            return CraigslistFeedItem(item_url, feed, cached_metadata=cached_metadata)
+            cls = CraigslistFeedItem
         elif feed['source_type'] == 'knock':
-            return KnockFeedItem(item_url, feed, cached_metadata=cached_metadata)
+            cls = KnockFeedItem
         elif feed['source_type'] == 'zillow':
-            return ZillowFeedItem(item_url, feed, cached_metadata=cached_metadata)
+            cls = ZillowFeedItem
+        if cls:
+            return cls(
+                item_url,
+                feed,
+                fetched_contents=fetched_contents,
+                cached_metadata=cached_metadata,
+                cached_location_data=cached_location_data
+            )
+
 
 class CraigslistFeedItem(FeedItem):
     def __init__(

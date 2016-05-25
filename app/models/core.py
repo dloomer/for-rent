@@ -132,6 +132,7 @@ class PropertyListing(BaseModel):
     address = db.StringProperty(required=True)
     property_types = db.StringListProperty(indexed=False)
     keywords = db.StringListProperty(indexed=False)
+    facts = DictProperty()
     geo = db.GeoPtProperty(required=True)
     body_html = db.TextProperty()
     is_active = db.BooleanProperty(required=True, default=True)
