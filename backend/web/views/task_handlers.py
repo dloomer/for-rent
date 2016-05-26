@@ -6,6 +6,7 @@
 
 # related third party imports
 import webapp2
+import logging
 
 # local application/library specific imports
 from app.lib.data_connectors import feed_config_connector
@@ -28,11 +29,19 @@ class DataFeedEntriesHandler(webapp2.RequestHandler):
                 cached_metadata = None
             feed_item = FeedItem.from_feed(feed, item_url, cached_metadata=cached_metadata)
             feed_item.parse()
-            property_listing = PropertyListing.from_parsed_feed_item(feed_item)
+            try:
+                property_listing = PropertyListing.from_parsed_feed_item(feed_item)
+            except:
+                logging.info("item_url=%s", item_url)
+                raise
             if not property_listing or not property_listing.db_object:
                 continue
             if property_listing.is_new or property_listing.is_reactivated:
-                mail.send_property_notification(property_listing.db_object, feed_item.user_url)
+                try:
+                    mail.send_property_notification(property_listing.db_object, feed_item.user_url)
+                except:
+                    logging.info("item_url=%s", item_url)
+                    raise
             elif property_listing.is_dirty:
                 # update existing inbox items
                 pass
