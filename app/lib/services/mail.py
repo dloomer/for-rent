@@ -44,7 +44,7 @@ def send_property_notification(property_listing, item_url):
 
 """.format(
     item_url,
-    property_listing.title,
+    property_listing.title.encode('utf-8'),
     urllib.quote_plus(formatted_address),
     "%s,%s" % (geo.lat, geo.lon)
 )
