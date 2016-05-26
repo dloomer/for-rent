@@ -8,7 +8,9 @@ from PIL import Image as PIL_Image
 from PIL import ImageFile
 
 from google.appengine.ext import blobstore, db
-from google.appengine.api import app_identity, images, urlfetch
+from google.appengine.api import app_identity, urlfetch
+from google.appengine.api.urlfetch_errors import ConnectionClosedError, DeadlineExceededError
+
 try:
     import cloudstorage as gcs
 except ImportError:
@@ -109,8 +111,13 @@ def _save_gcs_object(data, file_name, content_type='application/octet-stream', o
         file_name = "/" + bucket_name + file_name
 
     # Open the file and write to it
-    with gcs.open(file_name, 'w', content_type=content_type, options=options) as file_:
-        file_.write(data)
+    for _ in range(3):
+        try:
+            with gcs.open(file_name, 'w', content_type=content_type, options=options) as file_:
+                file_.write(data)
+            break
+        except gcs.errors.ServerError:
+            pass
 
     # Blobstore API requires extra /gs to distinguish against blobstore files.
     blobstore_filename = '/gs' + file_name
@@ -140,10 +147,17 @@ class Image(object):
     def __init__(self, source_url):
         self.images_hostname_proxies = feed_config_connector.get_images_hostname_proxies()
         self.source_url = source_url
-        self.img_data = urlfetch.fetch(
-            self._url_for_urlfetch(self.source_url),
-            deadline=20
-        ).content
+        for _ in range(3):
+            try:
+                self.img_data = urlfetch.fetch(
+                    self._url_for_urlfetch(self.source_url),
+                    deadline=20
+                ).content
+                break
+            except ConnectionClosedError:
+                pass
+            except DeadlineExceededError:
+                pass
         self.db_image = None
 
         handmade_key = db.Key.from_path("Image", 1)
