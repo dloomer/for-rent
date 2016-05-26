@@ -142,6 +142,9 @@ class PropertyListing(object):
             country_code = country_code or parsed_item.country_code
             image_url = image_url or parsed_item.image_url
 
+        _property_types = list(set(_property_types))
+        _keywords = list(set(_keywords))
+
         if is_rejected:
             if db_object:
                 logging.info("Deleting property listing at URL(s) %s", user_urls)
