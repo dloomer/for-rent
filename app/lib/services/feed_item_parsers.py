@@ -52,6 +52,7 @@ class FeedItem(object):
             self,
             url,
             feed,
+            fetched_data=None,
             fetched_contents=None,
             cached_metadata=None,
             cached_location_data=None
@@ -83,6 +84,10 @@ class FeedItem(object):
         self._http_response = None
         self._target_geo = []
         self._target_geo_accuracy = -1
+        self._response_data = None
+        if fetched_data:
+            self._response_data = fetched_data
+            self._is_fetched = True
         if fetched_contents:
             self._response_text = fetched_contents
             self._is_fetched = True
@@ -195,14 +200,9 @@ class FeedItem(object):
         url = \
             "https://maps.googleapis.com/maps/api/geocode/json?%s" \
             "&key=AIzaSyCudFnRAe8qVt0mXe2fcmVAzs-BjvRzaf8" % lookup
-        logging.debug("url=%s", url)
         response_dict = json.loads(urlfetch.fetch(url).content)
         if response_dict['results']:
             top_result = response_dict['results'][0]
-            logging.debug(
-                "top_result['geometry']['location_type']=%s",
-                top_result['geometry']['location_type']
-            )
 
             if top_result['geometry'].get('bounds'):
                 ne_bounds = top_result['geometry']['bounds']['northeast']
@@ -211,8 +211,6 @@ class FeedItem(object):
                     (ne_bounds['lat'], ne_bounds['lng']),
                     (sw_bounds['lat'], sw_bounds['lng'])
                 )
-                logging.debug("boundary_distance=%s", boundary_distance)
-                # 0.00140772080019, RANGE_INTERPOLATED
 
             if top_result['geometry']['location_type'] == "ROOFTOP":
                 street_number = ""
@@ -242,9 +240,6 @@ class FeedItem(object):
                 geo = [location['lat'], location['lng']]
                 distance = _distance(geo, self._target_geo) \
                     if self._target_geo else 0
-                logging.debug("distance=%s", distance)
-                logging.debug("geo=%s", geo)
-                logging.debug("self._target_geo=%s", self._target_geo)
                 if distance < 0.08 or \
                    (distance < 5.0 and \
                     address_text.lower().startswith(address.lower()) or \
@@ -264,6 +259,7 @@ class FeedItem(object):
     def from_feed(
             feed,
             item_url,
+            fetched_data=None,
             fetched_contents=None,
             cached_metadata=None,
             cached_location_data=None
@@ -280,6 +276,7 @@ class FeedItem(object):
             return cls(
                 item_url,
                 feed,
+                fetched_data=fetched_data,
                 fetched_contents=fetched_contents,
                 cached_metadata=cached_metadata,
                 cached_location_data=cached_location_data
@@ -291,6 +288,7 @@ class CraigslistFeedItem(FeedItem):
             self,
             url,
             feed,
+            fetched_data=None,
             fetched_contents=None,
             cached_metadata=None,
             cached_location_data=None
@@ -298,6 +296,7 @@ class CraigslistFeedItem(FeedItem):
         super(CraigslistFeedItem, self).__init__(
             url,
             feed,
+            fetched_data=fetched_data,
             fetched_contents=fetched_contents,
             cached_metadata=cached_metadata,
             cached_location_data=cached_location_data
@@ -358,6 +357,7 @@ class KnockFeedItem(FeedItem):
             self,
             url,
             feed,
+            fetched_data=None,
             fetched_contents=None,
             cached_metadata=None,
             cached_location_data=None
@@ -365,6 +365,7 @@ class KnockFeedItem(FeedItem):
         super(KnockFeedItem, self).__init__(
             url,
             feed,
+            fetched_data=fetched_data,
             fetched_contents=fetched_contents,
             cached_metadata=cached_metadata,
             cached_location_data=cached_location_data
@@ -373,7 +374,10 @@ class KnockFeedItem(FeedItem):
     def parse(self):
         super(KnockFeedItem, self).parse()
 
-        listing_dict = json.loads(self._response_text)['listing']
+        if self._response_data:
+            listing_dict = self._response_data
+        else:
+            listing_dict = json.loads(self._response_text)['listing']
         self.price = listing_dict['leasing']['monthlyRent']
         bedrooms = int(listing_dict['floorplan']['bedrooms'])
         bathrooms = int(listing_dict['floorplan']['bathrooms'])
@@ -400,9 +404,9 @@ class KnockFeedItem(FeedItem):
             self.image_url = listing_dict['coverPhoto']['url']
         elif listing_dict['photos']:
             self.image_url = listing_dict['photos'][0]['url']
-        self.posting_body = listing_dict['description']['full']
+        # self.posting_body = listing_dict['description']['full']
 
-        url = "https://api.knockrentals.com/v1/listing/rd2eAxAqOQM88Wxg/availableTimes"
+        url = "https://api.knockrentals.com/v1/listing/%s/availableTimes" % listing_dict['id']
         response_dict = json.loads(urlfetch.fetch(url).content)
         self.is_active = \
             len(response_dict.get('acceptable_slots', [])) > 0 or \
@@ -415,6 +419,7 @@ class ZillowFeedItem(FeedItem):
             self,
             url,
             feed,
+            fetched_data=None,
             fetched_contents=None,
             cached_metadata=None,
             cached_location_data=None
@@ -422,6 +427,7 @@ class ZillowFeedItem(FeedItem):
         super(ZillowFeedItem, self).__init__(
             url,
             feed,
+            fetched_data=fetched_data,
             fetched_contents=fetched_contents,
             cached_metadata=cached_metadata,
             cached_location_data=cached_location_data

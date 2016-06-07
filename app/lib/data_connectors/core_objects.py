@@ -9,7 +9,7 @@ from google.appengine.ext import db
 import app.models.core as core_models
 from app.lib.data_connectors.image import Image
 
-def _feed_item_from_url(feed_name, url):
+def feed_item_from_url(feed_name, url):
     item_key_name = core_models.FeedItemCache.generate_key_name(
         feed_name=feed_name,
         item_link=url
@@ -17,7 +17,7 @@ def _feed_item_from_url(feed_name, url):
     return core_models.FeedItemCache.get_by_key_name(item_key_name)
 
 def feed_item_metadata(feed_name, url):
-    db_feed_item = _feed_item_from_url(feed_name, url)
+    db_feed_item = feed_item_from_url(feed_name, url)
     # pylint: disable=no-member
     return db_feed_item.cached_metadata if db_feed_item else {}
     # pylint: enable=no-member
@@ -77,9 +77,12 @@ class PropertyListing(object):
         if image_url and \
             (not self.db_object.image or self.db_object.image.original_url != image_url):
             img = Image(image_url)
-            img.save()
-            self.db_object.image = img.db_image
-            self.is_dirty = True
+            try:
+                img.save()
+                self.db_object.image = img.db_image
+                self.is_dirty = True
+            except ValueError:
+                pass
         if self.is_dirty:
             self.db_object.put()
 
@@ -150,7 +153,7 @@ class PropertyListing(object):
                 logging.info("Deleting property listing at URL(s) %s", user_urls)
                 db_object.delete()
                 for parsed_item in parsed_items:
-                    db_feed_item = _feed_item_from_url(parsed_item.feed_name, parsed_item.page_url)
+                    db_feed_item = feed_item_from_url(parsed_item.feed_name, parsed_item.page_url)
                     # pylint: disable=no-member
                     if db_feed_item and \
                         core_models.FeedItemCache.property_listing.get_value_for_datastore(
@@ -195,7 +198,7 @@ class PropertyListing(object):
             return
 
         for parsed_item in parsed_items:
-            db_feed_item = _feed_item_from_url(parsed_item.feed_name, parsed_item.page_url)
+            db_feed_item = feed_item_from_url(parsed_item.feed_name, parsed_item.page_url)
             # pylint: disable=no-member
             if db_feed_item and db_feed_item.property_listing != property_listing.db_object:
                 db_feed_item.property_listing = property_listing.db_object
