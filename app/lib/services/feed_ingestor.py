@@ -49,20 +49,33 @@ class FeedIngestor(object):
     def _fetch(self):
         cached_metadata = None
         if self.feed_type == "rss":
-            response = urlfetch.fetch(self._url_for_urlfetch(self.feed_url), deadline=20)
+            for _ in range(3):
+                try:
+                    response = urlfetch.fetch(self._url_for_urlfetch(self.feed_url), deadline=20)
+                    break
+                except ConnectionClosedError:
+                    pass
+                except DeadlineExceededError:
+                    pass
             parsed_feed = feedparser.parse(StringIO(response.content))
             self._results = parsed_feed.entries
         elif self.feed_type == "json":
-            if self.feed_post_body:
-                response = urlfetch.fetch(
-                    url=self._url_for_urlfetch(self.feed_url),
-                    payload=json.dumps(self.feed_post_body),
-                    method=urlfetch.POST,
-                    deadline=20
-                )
-            else:
-                response = urlfetch.fetch(self._url_for_urlfetch(self.feed_url), deadline=20)
-
+            for _ in range(3):
+                try:
+                    if self.feed_post_body:
+                        response = urlfetch.fetch(
+                            url=self._url_for_urlfetch(self.feed_url),
+                            payload=json.dumps(self.feed_post_body),
+                            method=urlfetch.POST,
+                            deadline=20
+                        )
+                    else:
+                        response = urlfetch.fetch(self._url_for_urlfetch(self.feed_url), deadline=20)
+                    break
+                except ConnectionClosedError:
+                    pass
+                except DeadlineExceededError:
+                    pass
             parsed_feed = json.loads(response.content)
             self._results = []
             if self.source_type == 'knock':
@@ -106,15 +119,29 @@ class FeedIngestor(object):
 
         self._cached_links = cache.cached_links()
 
-        results_not_cached = [
-            result for result in self._results
-            if self._item_link(result) not in self._cached_links
-        ]
-        for result in results_not_cached:
-            cached_metadata = result if self.feed_type == "json" else None
-            cache.add_item_link(self._item_link(result), cached_metadata=cached_metadata)
+        if self.feed_type == "rss":
+            results_not_cached = [
+                result for result in self._results
+                if self._item_link(result) not in self._cached_links
+            ]
+            for result in results_not_cached:
+                cache.add_item_link(self._item_link(result))
+        else:
+            for result in self._results:
+                cache.add_item_link(self._item_link(result), cached_metadata=result)
 
         self._is_fetched = True
+
+    def entries(self):
+        if not self._is_fetched:
+            self._fetch()
+        return self._results
+
+    def urls(self):
+        return [
+            self._item_link(entry)
+            for entry in self.entries()
+        ]
 
     def entries_for_update(self):
         if not self._is_fetched:
