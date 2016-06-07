@@ -165,10 +165,21 @@ class Image(object):
             db.Key.from_path('Image', list(db.allocate_ids(handmade_key, 1))[0])
 
     def _save_gcs_image(self, img, mime_type, image_size):
+        size_in_pixels = img.size[0] * img.size[1]
+        import logging
+        from google.appengine.api import runtime
+        from google.appengine.api import logservice
+        logservice.AUTOFLUSH_ENABLED = False
+        logging.debug("image size=%s" % size_in_pixels)
+        logservice.flush()
+
+        if size_in_pixels > 12 * (10**6):
+            del img
+            raise ValueError("Image too large (%s pixels)", size_in_pixels)
         if mime_type.lower().startswith("image/"):
             format_ = mime_type[6:].upper()
         else:
-            raise Exception("Unexpected MIME type %s" % mime_type)
+            raise ValueError("Unexpected MIME type %s" % mime_type)
 
         settings = COMPRESSION_SETTINGS[image_size]
 
