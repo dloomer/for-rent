@@ -5,6 +5,9 @@
 """
 
 # related third party imports
+import datetime
+import logging
+from hashlib import sha1
 import webapp2
 from google.appengine.api import taskqueue
 
@@ -16,22 +19,75 @@ from app.lib.data_connectors.core_objects import PropertyListing, feed_item_meta
 
 class LoadFeedDataRequestHandler(webapp2.RequestHandler):
     def get(self):
-        feed_config = feed_config_connector.get_feed_config()
-        feeds = feed_config['feeds']
+        feed_name = self.request.get('feed_name')
 
-        for feed in feeds:
+        feed_config = feed_config_connector.get_feed_config()
+
+        if feed_name:
+            feeds_map = feed_config_connector.get_feeds_map()
+            feed = feeds_map[feed_name]
+            _source_types = feed_config_connector.get_source_types()
+            _feed_type = _source_types[feed['source_type']]['feed_type']
             feed_ingestor = FeedIngestor(feed)
-            urls_for_update = feed_ingestor.urls_for_update()
+            if _feed_type == 'rss':
+                urls_for_update = feed_ingestor.urls_for_update()
+            else:
+                urls_for_update = feed_ingestor.urls()
             if len(urls_for_update):
-                task = taskqueue.Task(
-                    url='/task/process_data_feed_entries',
-                    params={
-                        'feed_name': feed['name'],
-                        'urls': ','.join(urls_for_update)
-                    },
-                    method='GET'
-                )
-                task.add()
+                batch_size = 5
+                batch_count = (len(urls_for_update) + batch_size - 1) / batch_size
+                for batch_number in range(batch_count):
+                    batch_start = batch_number * batch_size
+                    batch_end = (batch_number + 1) * batch_size
+
+                    task_url = "/task/process_data_feed_entries"
+                    urls_parm = ','.join(urls_for_update[batch_start:batch_end])
+
+                    unique_id_str = self.request.environ['PATH_INFO'] + \
+                        '?' + self.request.environ['QUERY_STRING'] + \
+                        '|' + task_url + \
+                        '|' + urls_parm + \
+                        '|' + feed['name']
+
+                    try:
+                        task = taskqueue.Task(
+                            url=task_url,
+                            params={
+                                'feed_name': feed['name'],
+                                'urls': urls_parm
+                            },
+                            name=sha1(unique_id_str).hexdigest(),
+                            method='GET'
+                        )
+                        task.add()
+                    except taskqueue.TaskAlreadyExistsError:
+                        pass
+                    except taskqueue.TombstonedTaskError:
+                        pass
+        else:
+            feeds = feed_config['feeds']
+            for feed in feeds:
+                task_url = "/batch/load_feed_data"
+
+                unique_id_str = self.request.environ['PATH_INFO'] + \
+                    '?' + self.request.environ['QUERY_STRING'] + \
+                    '|' + task_url + \
+                    '|' + feed['name']
+                try:
+                    task = taskqueue.Task(
+                        url=task_url,
+                        params={
+                            'feed_name': feed['name'],
+                            'queued_time': datetime.datetime.now()
+                        },
+                        name=sha1(unique_id_str).hexdigest(),
+                        method='GET'
+                    )
+                    task.add()
+                except taskqueue.TaskAlreadyExistsError:
+                    pass
+                except taskqueue.TombstonedTaskError:
+                    pass
 
 class RefetchListingStatusRequestHandler(webapp2.RequestHandler):
     def get(self):
@@ -74,6 +130,9 @@ class EnqueueTaskRequestHandler(webapp2.RequestHandler):
     def get(self):
         task = taskqueue.Task(
             url=self.request.get("url"),
+            params={
+                'queued_time': datetime.datetime.now(),
+            },
             method='GET'
         )
         task.add()
