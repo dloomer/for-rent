@@ -32,9 +32,7 @@ class BaseHandler(webapp2.RequestHandler):
         
         # update template_args with standard arguments here.
 
-        logging.debug("self.response.write(template.render(path, template_args))")
         self.response.write(template.render(path, template_args))
-        logging.debug("end code")
 
 class HomeRequestHandler(BaseHandler):
     def get(self):
@@ -42,12 +40,3 @@ class HomeRequestHandler(BaseHandler):
 
         params = {}
         logging.debug("headers=%s" % self.request.headers)
-
-        #return self.render_template('home.html', **params)
-
-        # import app.lib.services.mail as mail
-        # import app.models.core as core_models
-
-        # property_listing = core_models.PropertyListing.get_by_key_name('47.6057333|-122.3161506')
-        # feed_item = property_listing.feeditemcache_set.get()
-        # mail.send_property_notification(property_listing, feed_item.item_link)
