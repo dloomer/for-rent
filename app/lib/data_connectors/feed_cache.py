@@ -41,8 +41,8 @@ class FeedCache(object):
             .get_or_insert_by_values(
                 feed_name=self.feed_name,
                 item_link=item_link,
-                cached_metadata=cached_metadata,
             )
+        db_cached.cached_metadata = cached_metadata
         db_cached.put()
 
         cached_links = self.cached_links()
