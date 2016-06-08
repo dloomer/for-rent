@@ -3,7 +3,13 @@ import urllib
 from google.appengine.ext.blobstore import BlobReader
 from google.appengine.api import mail
 
+# local application/library specific imports
+from app.lib.data_connectors import feed_config_connector
+
 def send_property_notification(property_listing, item_url):
+    recipients_config = feed_config_connector.get_alert_recipients()
+    recipients = ["%s <%s>" % (_['name'], _['email']) for _ in recipients_config]
+
     property_type_map = {
         'apartment': "Apartment",
         'condo': "Condo",
@@ -14,6 +20,7 @@ def send_property_notification(property_listing, item_url):
         'in-law': "In-Law",
         'townhouse': "Townhouse"
     }
+    # TODO: use app_identity
     sender_address = "Rental Bot <noreply@for-rent-1305.appspotmail.com>"
     property_type = property_listing.property_types[0] \
         if property_listing.property_types else "Property"
@@ -33,7 +40,7 @@ def send_property_notification(property_listing, item_url):
     message = mail.EmailMessage(
         sender=sender_address,
         subject=subject,
-        to=["Dave Loomer <dloomer@gmail.com>", "Bitchypants <lesley.babb@gmail.com>"]
+        to=recipients
     )
 
     message.body = item_url

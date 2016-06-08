@@ -28,3 +28,8 @@ def get_images_hostname_proxies(feed_config=None):
     if not feed_config:
         feed_config = get_feed_config()
     return feed_config.get('images_hostname_proxies', {})
+
+def get_alert_recipients(feed_config=None):
+    if not feed_config:
+        feed_config = get_feed_config()
+    return feed_config.get('alert_recipients', {})
