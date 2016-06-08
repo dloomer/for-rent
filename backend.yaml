@@ -1,3 +1,4 @@
+# Customize 'application' to your own App Engine tenant
 application: for-rent-1305
 version: 1
 module: backend
