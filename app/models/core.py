@@ -88,6 +88,7 @@ class Image(db.Model):
     create_date = db.DateTimeProperty(auto_now_add=True, indexed=False)
 
     def serving_url(self, size="o"):
+        # TODO: use app_identity
         gcs_bucket_folder_url = "http://storage.googleapis.com/for-rent-1305.appspot.com/images"
         return "%s/%s/%s.jpg" % (gcs_bucket_folder_url, self.key().id(), size)
 
