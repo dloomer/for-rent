@@ -2,7 +2,7 @@
 Google App Engine app that intends to save you a lot of work in apartment-hunting. Makes Craigslist less spammy by ignoring re-posts of the same property. Correlates properties from CL, Zillow, and Knock into a single feed that is spit out in the form of email alerts.
 
 ### Required Python libraries
-Place the following in your `third_party` folder before deploying to App Engine:
+Place the following in your `/third_party` folder before deploying to App Engine:
 * [BeatifulSoup 4](https://www.crummy.com/software/BeautifulSoup/bs4/download/) (`bs4` folder from the repo)
 * [Google Cloud Storage Client Library](https://developers.google.com/api-client-library/python/apis/storage/v1#installing-the-client-library) (`cloudstorage` folder)
 * [feedparser](https://pypi.python.org/pypi/feedparser) (just the `feedparser.py` file)
