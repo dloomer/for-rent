@@ -1,183 +1,11 @@
+# Put your own feed defs into /feeds.yaml
+
 feeds:
-  - name: downtown-seattle
+  - name: downtown-craigslist
     source_type: craigslist
     description: Downtown
     url: http://seattle.craigslist.org/search/apa?format=rss&hasPic=1&max_price=2700&minSqft=600&min_price=1200&pets_dog=1&postal=98101&search_distance=2
-    hostname_proxy: seattle.craigslist.loomer.net
-    region: "Seattle, WA, US"
-  - name: beacon-hill
-    source_type: craigslist
-    description: Beacon Hill
-    url: http://seattle.craigslist.org/search/apa?format=rss&hasPic=1&max_price=2700&minSqft=600&min_price=1200&pets_dog=1&postal=98108&search_distance=3
-    hostname_proxy: seattle.craigslist.loomer.net
-    region: "Seattle, WA, US"
-  - name: lower-queen-anne
-    source_type: craigslist
-    description: Lower Queen Anne
-    url: http://seattle.craigslist.org/search/apa?format=rss&hasPic=1&max_price=2700&minSqft=600&min_price=1200&pets_dog=1&postal=98109&search_distance=2
-    hostname_proxy: seattle.craigslist.loomer.net
-    region: "Seattle, WA, US"
-  - name: queen-anne
-    source_type: craigslist
-    description: Queen Anne
-    url: http://seattle.craigslist.org/search/apa?format=rss&hasPic=1&max_price=2700&minSqft=600&min_price=1200&pets_dog=1&postal=98121&search_distance=2
-    hostname_proxy: seattle.craigslist.loomer.net
-    region: "Seattle, WA, US"
-  - name: wallingford
-    source_type: craigslist
-    description: Wallingford
-    url: http://seattle.craigslist.org/search/apa?format=rss&hasPic=1&max_price=2700&minSqft=600&min_price=1200&pets_dog=1&postal=98103&search_distance=2
-    hostname_proxy: seattle.craigslist.loomer.net
-    region: "Seattle, WA, US"
-  - name: capitol-hill
-    source_type: craigslist
-    description: Capitol Hill
-    url: http://seattle.craigslist.org/search/apa?format=rss&hasPic=1&max_price=2700&minSqft=600&min_price=1200&pets_dog=1&postal=98102&search_distance=2
-    hostname_proxy: seattle.craigslist.loomer.net
-    region: "Seattle, WA, US"
-  - name: north-capitol-hill
-    source_type: craigslist
-    description: Capitol Hill
-    url: http://seattle.craigslist.org/search/apa?format=rss&hasPic=1&max_price=2700&minSqft=600&min_price=1200&pets_dog=1&postal=98112&search_distance=2
-    hostname_proxy: seattle.craigslist.loomer.net
-    region: "Seattle, WA, US"
-  - name: west-seattle
-    source_type: craigslist
-    description: West Seattle
-    url: http://seattle.craigslist.org/search/apa?format=rss&hasPic=1&max_price=2700&minSqft=600&min_price=1200&pets_dog=1&postal=98126&search_distance=2
-    hostname_proxy: seattle.craigslist.loomer.net
-    region: "Seattle, WA, US"
-  - name: ballard
-    source_type: craigslist
-    description: Ballard
-    url: http://seattle.craigslist.org/search/apa?format=rss&hasPic=1&max_price=2700&minSqft=600&min_price=1200&pets_dog=1&postal=98117&search_distance=2
-    hostname_proxy: seattle.craigslist.loomer.net
-    region: "Seattle, WA, US"
-  - name: fremont
-    source_type: craigslist
-    description: Fremont
-    url: http://seattle.craigslist.org/search/apa?format=rss&hasPic=1&max_price=2700&minSqft=600&min_price=1200&pets_dog=1&postal=98107&search_distance=2
-    hostname_proxy: seattle.craigslist.loomer.net
-    region: "Seattle, WA, US"
-  - name: columbia-city
-    source_type: craigslist
-    description: Columbia City
-    url: http://seattle.craigslist.org/search/apa?format=rss&hasPic=1&max_price=2700&minSqft=600&min_price=1200&pets_dog=1&postal=98118&search_distance=2
-    hostname_proxy: seattle.craigslist.loomer.net
-    region: "Seattle, WA, US"
-  - name: capitol-hill-knock
-    source_type: knock
-    description: Capitol Hill
-    url: https://api.knockrentals.com/v1/search?size=500&start=0
-    item_url_path: https://knockrentals.com/listing/
-    post_body:
-      monthlyRent:
-        low: 1200
-        high: 2700
-      size:
-        low: 600
-      pets:
-        large_dogs: true
-      area:
-        type: coordinates
-        shape:
-          - [-122.302766,47.629194]
-          - [-122.329459,47.613921]
-    region: "Seattle, WA, US"
-  - name: eastlake-knock
-    source_type: knock
-    description: Eastlake
-    url: https://api.knockrentals.com/v1/search?size=500&start=0
-    item_url_path: https://knockrentals.com/listing/
-    post_body:
-      monthlyRent:
-        low: 1200
-        high: 2700
-      size:
-        low: 600
-      pets:
-        large_dogs: true
-      area:
-        type: coordinates
-        shape:
-          - [-122.316671,47.652095]
-          - [-122.330232,47.634573]
-    region: "Seattle, WA, US"
-  - name: west-seattle-knock
-    source_type: knock
-    description: West Seattle/Alki
-    url: https://api.knockrentals.com/v1/search?size=500&start=0
-    item_url_path: https://knockrentals.com/listing/
-    post_body:
-      monthlyRent:
-        low: 1200
-        high: 2700
-      size:
-        low: 600
-      pets:
-        large_dogs: true
-      area:
-        type: coordinates
-        shape:
-          - [-122.344093,47.593463]
-          - [-122.420654,47.548295]
-    region: "Seattle, WA, US"
-  - name: wallingford-knock
-    source_type: knock
-    description: Wallingford/Fremont
-    url: https://api.knockrentals.com/v1/search?size=500&start=0
-    item_url_path: https://knockrentals.com/listing/
-    post_body:
-      monthlyRent:
-        low: 1200
-        high: 2700
-      size:
-        low: 600
-      pets:
-        large_dogs: true
-      area:
-        type: coordinates
-        shape:
-          - [-122.322850,47.664929]
-          - [-122.367482,47.648452]
-    region: "Seattle, WA, US"
-  - name: ballard-knock
-    source_type: knock
-    description: Ballard/Fremont
-    url: https://api.knockrentals.com/v1/search?size=500&start=0
-    item_url_path: https://knockrentals.com/listing/
-    post_body:
-      monthlyRent:
-        low: 1200
-        high: 2700
-      size:
-        low: 600
-      pets:
-        large_dogs: true
-      area:
-        type: coordinates
-        shape:
-          - [-122.367482,47.682383]
-          - [-122.406063,47.659726]
-    region: "Seattle, WA, US"
-  - name: squire-park-knock
-    source_type: knock
-    description: Squire Park/Madrona/Leschi
-    url: https://api.knockrentals.com/v1/search?size=500&start=0
-    item_url_path: https://knockrentals.com/listing/
-    post_body:
-      monthlyRent:
-        low: 1200
-        high: 2700
-      size:
-        low: 600
-      pets:
-        large_dogs: true
-      area:
-        type: coordinates
-        shape:
-          - [-122.281609,47.615280]
-          - [-122.320404,47.590395]
+    hostname_proxy: seattle.craigslist.mydomain.com
     region: "Seattle, WA, US"
   - name: downtown-knock
     source_type: knock
@@ -198,121 +26,10 @@ feeds:
           - [-122.321091,47.618636]
           - [-122.359028,47.601971]
     region: "Seattle, WA, US"
-  - name: slu-knock
-    source_type: knock
-    description: South Lake Union/Lower Queene Anne
-    url: https://api.knockrentals.com/v1/search?size=500&start=0
-    item_url_path: https://knockrentals.com/listing/
-    post_body:
-      monthlyRent:
-        low: 1200
-        high: 2700
-      size:
-        low: 600
-      pets:
-        large_dogs: true
-      area:
-        type: coordinates
-        shape:
-          - [-122.328816,47.629627]
-          - [-122.371216,47.618636]
-    region: "Seattle, WA, US"
-  - name: queen-anne-knock
-    source_type: knock
-    description: Queen Anne
-    url: https://api.knockrentals.com/v1/search?size=500&start=0
-    item_url_path: https://knockrentals.com/listing/
-    post_body:
-      monthlyRent:
-        low: 1200
-        high: 2700
-      size:
-        low: 600
-      pets:
-        large_dogs: true
-      area:
-        type: coordinates
-        shape:
-          - [-122.342377,47.639923]
-          - [-122.377567,47.629627]
-    region: "Seattle, WA, US"
-  - name: columbia-city-knock
-    source_type: knock
-    description: Mt Baker/Columbia City
-    url: https://api.knockrentals.com/v1/search?size=500&start=0
-    item_url_path: https://knockrentals.com/listing/
-    post_body:
-      monthlyRent:
-        low: 1200
-        high: 2700
-      size:
-        low: 600
-      pets:
-        large_dogs: true
-      area:
-        type: coordinates
-        shape:
-          - [-122.264786,47.590164]
-          - [-122.313709,47.560749]
-    region: "Seattle, WA, US"
-  - name: capitol-hill-zillow
-    source_type: zillow
-    description: Capitol Hill
-    url: http://www.zillow.com/search/GetResults.htm?spt=homes&status=000010&lt=000000&ht=111101&mp=1200,2700&sf=600,&pets=1&rect=-122329459,47613921,-122302766,47629194&p=1&search=maplist&rid=16037&rt=6&zoom=10
-    item_url_path: http://www.zillow.com
-    region: "Seattle, WA, US"
-  - name: eastlake-zillow
-    source_type: zillow
-    description: Eastlake
-    url: http://www.zillow.com/search/GetResults.htm?spt=homes&status=000010&lt=000000&ht=111101&mp=1200,2700&sf=600,&pets=1&rect=-122330232,47634573,-122316671,47652095&p=1&search=maplist&rid=16037&rt=6&zoom=10
-    item_url_path: http://www.zillow.com
-    region: "Seattle, WA, US"
-  - name: west-seattle-zillow
-    source_type: zillow
-    description: West Seattle/Alki
-    url: http://www.zillow.com/search/GetResults.htm?spt=homes&status=000010&lt=000000&ht=111101&mp=1200,2700&sf=600,&pets=1&rect=-122420654,47548295,-122344093,47593463&p=1&search=maplist&rid=16037&rt=6&zoom=10
-    item_url_path: http://www.zillow.com
-    region: "Seattle, WA, US"
-  - name: wallingford-zillow
-    source_type: zillow
-    description: Wallingford/Fremont
-    url: http://www.zillow.com/search/GetResults.htm?spt=homes&status=000010&lt=000000&ht=111101&mp=1200,2700&sf=600,&pets=1&rect=-122367482,47648452,-122322850,47664929&p=1&search=maplist&rid=16037&rt=6&zoom=10
-    item_url_path: http://www.zillow.com
-    region: "Seattle, WA, US"
-  - name: ballard-zillow
-    source_type: zillow
-    description: Ballard/Fremont
-    url: http://www.zillow.com/search/GetResults.htm?spt=homes&status=000010&lt=000000&ht=111101&mp=1200,2700&sf=600,&pets=1&rect=-122406063,47659726,-122367482,47682383&p=1&search=maplist&rid=16037&rt=6&zoom=10
-    item_url_path: http://www.zillow.com
-    region: "Seattle, WA, US"
-  - name: squire-park-zillow
-    source_type: zillow
-    description: Squire Park/Madrona/Leschi
-    url: http://www.zillow.com/search/GetResults.htm?spt=homes&status=000010&lt=000000&ht=111101&mp=1200,2700&sf=600,&pets=1&rect=-122320404,47590395,-122281609,47615280&p=1&search=maplist&rid=16037&rt=6&zoom=10
-    item_url_path: http://www.zillow.com
-    region: "Seattle, WA, US"
   - name: downtown-zillow
     source_type: zillow
     description: Downtown/First Hill
     url: http://www.zillow.com/search/GetResults.htm?spt=homes&status=000010&lt=000000&ht=111101&mp=1200,2700&sf=600,&pets=1&rect=-122359028,47601971,-122321091,47618636&p=1&search=maplist&rid=16037&rt=6&zoom=10
-    item_url_path: http://www.zillow.com
-    region: "Seattle, WA, US"
-  - name: slu-zillow
-    source_type: zillow
-    description: South Lake Union/Lower Queene Anne
-    url: http://www.zillow.com/search/GetResults.htm?spt=homes&status=000010&lt=000000&ht=111101&mp=1200,2700&sf=600,&pets=1&rect=-122371216,47618636,-122328816,47629627&p=1&search=maplist&rid=16037&rt=6&zoom=10
-    item_url_path: http://www.zillow.com
-    region: "Seattle, WA, US"
-  - name: queen-anne-zillow
-    source_type: zillow
-    description: Queen Anne
-    url: http://www.zillow.com/search/GetResults.htm?spt=homes&status=000010&lt=000000&ht=111101&mp=1200,2700&sf=600,&pets=1&rect=-122377567,47629627,-122342377,47639923&p=1&search=maplist&rid=16037&rt=6&zoom=10
-    item_url_path: http://www.zillow.com
-    region: "Seattle, WA, US"
-  - name: columbia-city-zillow
-    source_type: zillow
-    description: Mt Baker/Columbia City
-    url: http://www.zillow.com/search/GetResults.htm?spt=homes&status=000010&lt=000000&ht=111101&mp=1200,2700&sf=600,&pets=1&rect=-122313709,47560749,-122264786,47590164&p=1&search=maplist&rid=16037&rt=6&zoom=10
     item_url_path: http://www.zillow.com
     region: "Seattle, WA, US"
 source_types:
@@ -320,6 +37,7 @@ source_types:
     feed_type: rss
   knock:
     feed_type: json
+    use_feed_metadata: true
   zillow:
     feed_type: json
     post_filter_criteria:
@@ -328,4 +46,7 @@ source_types:
           operation: must_contain
           value: large dogs
 images_hostname_proxies:
-    craigslist: images.craigslist.loomer.net
+    craigslist: images.craigslist.mydomain.com
+alert_recipients:
+  - name: Dave Loomer
+    email: dloomer@gmail.com
